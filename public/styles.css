@@ -562,6 +562,34 @@ p {
   letter-spacing: 0.05em;
 }
 
+.gallery-more {
+  margin: 1.5rem 0 0;
+  text-align: center;
+}
+
+.ig-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #fff;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+.ig-link:hover {
+  border-color: var(--text);
+}
+.ig-link-arrow {
+  transition: transform 0.15s ease;
+}
+.ig-link:hover .ig-link-arrow {
+  transform: translateX(3px);
+}
+
 /* ---------- Steps ---------- */
 .steps {
   list-style: none;
@@ -884,6 +912,13 @@ p {
 .footer-contact span {
   color: #8d95a3;
   font-size: 0.9rem;
+}
+
+.footer-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
 }
 
 .footer-legal {
