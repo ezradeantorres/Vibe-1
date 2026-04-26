@@ -1,5 +1,11 @@
 # CLAUDE.md
 
+> **First thing every session — read `RUNBOOK.md` §"Current state".** That's
+> the dated snapshot of where the pipeline is right now: who's working, what's
+> decided, what's blocked, and the exact next commands to run. It overrides
+> any stale assumption in this file or `PROJECT_PLAN.md`. **You are also
+> responsible for keeping that section current** — see Operating principle 7.
+
 This repo's single source of truth is **`PROJECT_PLAN.md`**. Read it in full before doing anything else.
 
 Quick orientation:
@@ -17,6 +23,7 @@ Quick orientation:
 4. **Compliance is non-negotiable.** Every generated site must have `noindex` + `robots.txt` + `X-Robots-Tag` (§13). Don't ship a site that's missing any of these.
 5. **Photos are scraped, not generated, and never reused across communities.** If usable photos aren't available, fall back to one curated stock photo and note it in the manifest.
 6. **Do not commit secrets.** `.env` is gitignored. `.env.example` is checked in with placeholder keys.
+7. **Keep `RUNBOOK.md` §"Current state" current.** It's the handoff surface between operators (Ezra ↔ Ted ↔ next session). Update it in the same commit whenever any of these change: a decision gets locked or revised; a blocking item is unblocked or a new one is added; a new community is selected or finished; a pipeline stage moves from "not built" → "built" or vice versa; the active branch changes. Bump the date in the heading. If a fact in `CLAUDE.md` or `PROJECT_PLAN.md` becomes stale, fix it there too — but the snapshot lives in `RUNBOOK.md`.
 
 ## Phase 1 deviation from `PROJECT_PLAN.md`: LLM execution mode
 
@@ -51,8 +58,7 @@ This repo is connected to one Netlify site. Build settings: production branch `m
 
 ## First action when picking up this repo
 
-If this is a fresh checkout: read `PROJECT_PLAN.md` end-to-end, then execute the task list in **Appendix A** of that document, in order, applying the Phase 1 deviation above.
-
-## Current state — for the next operator
-
-`RUNBOOK.md` §"Current state" carries the dated snapshot of where the pipeline is, what's been decided, what's blocked, and the exact commands the next operator (Ezra or Ted) should run. Read it before touching anything — it overrides any stale assumptions in this file or `PROJECT_PLAN.md`.
+1. Read `RUNBOOK.md` §"Current state" — that tells you where we are *today*.
+2. Read `PROJECT_PLAN.md` end-to-end for the long-form spec.
+3. Execute against the "Three blocking items" in `RUNBOOK.md`, applying the Phase 1 deviation above.
+4. As you make progress, update `RUNBOOK.md` §"Current state" in the same commit (Operating principle 7).

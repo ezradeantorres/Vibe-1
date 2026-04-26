@@ -7,6 +7,13 @@ stage, commit the produced artifacts so the in-session agent can review them.
 
 ## Current state (2026-04-26) — read this first
 
+> **Maintenance rule:** This section is the live handoff surface between
+> operators and sessions. Whoever is the in-session agent must keep it
+> current — update it (and bump the date in the heading) in the same commit
+> whenever a decision is locked/revised, a blocker is resolved or added, a
+> pipeline stage changes status, or a new community is selected/finished.
+> See `CLAUDE.md` Operating principle 7.
+
 **Operators on deck:** Ezra + Ted. Either of you can run the steps below.
 **Active branch:** `silverlist/phase-1-mvp`. All work commits here. `main`
 is the deploy branch — only merge a community's `public/<slug>/` into `main`
