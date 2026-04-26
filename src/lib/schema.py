@@ -97,6 +97,7 @@ class ScrapeResult(_Strict):
     tagline: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
+    email: Optional[str] = None  # public-facing contact email if shown
     services: list[ScrapedService] = Field(default_factory=list)
     amenities: list[str] = Field(default_factory=list)
     about_text: Optional[str] = None
@@ -121,6 +122,42 @@ class CopyFAQ(_Strict):
     answer: str
 
 
+class CopyHeroStat(_Strict):
+    """A single number+label pair shown in the hero stats bar (Dashboard pattern)."""
+    value: str  # e.g. "8", "24/7", "$2,900"
+    suffix: Optional[str] = None  # e.g. "/7" rendered smaller after value
+    label: str  # e.g. "Residents, not eighty"
+
+
+class CopyDifferentiator(_Strict):
+    """One pillar of the 'three things we do differently' section. Optional."""
+    number: str  # e.g. "01"
+    headline: str
+    body: str
+
+
+class CopyTrustBadge(_Strict):
+    """One item in the trust band (e.g. 24/7 care, RN-supervised). Optional."""
+    label: str           # e.g. "24/7 caregiver presence"
+    sublabel: Optional[str] = None  # e.g. "RN-supervised"
+
+
+class CopyAmenity(_Strict):
+    """One amenity in the amenities grid. Replaces the bare-string list when
+    we want a name + short description (richer than scrape.amenities)."""
+    name: str
+    description: Optional[str] = None
+
+
+class CopyPricing(_Strict):
+    """Optional pricing card content. Only render when the operator has
+    confirmed pricing for this community."""
+    from_dollars: int                       # e.g. 2900
+    avg_dollars: Optional[int] = None       # e.g. 3600
+    intro: Optional[str] = None             # short paragraph above the numbers
+    includes: list[str] = Field(default_factory=list, max_length=10)
+
+
 class CopyResult(_Strict):
     """The structured copy the in-session agent produces, fed to the
     Jinja template by src/generate.py. PROJECT_PLAN.md §9-§10.
@@ -136,12 +173,29 @@ class CopyResult(_Strict):
     seo_description: str = Field(max_length=160)
     hero_headline: str
     hero_subhead: str
-    hero_image_path: str  # repo-relative, in the deployed bundle
+    # Photos may be absent when scraping fails and the §13 fallback applies.
+    # Template gracefully shows themed gradient placeholders when these are empty.
+    hero_image_path: Optional[str] = None  # repo-relative, in the deployed bundle
     about_paragraph: str
     services: list[CopyService] = Field(default_factory=list, max_length=5)
     faqs: list[CopyFAQ] = Field(default_factory=list, min_length=4, max_length=8)
-    photo_gallery_paths: list[str] = Field(min_length=3, max_length=8)
+    photo_gallery_paths: list[str] = Field(default_factory=list, max_length=8)
     primary_cta_text: str = "Schedule a Tour"
+
+    # Optional rich fields (Dashboard-design parity). All default-empty so older
+    # CopyResults and lean ones still validate.
+    hero_stats: list[CopyHeroStat] = Field(default_factory=list, max_length=4)
+    differentiators: list[CopyDifferentiator] = Field(default_factory=list, max_length=4)
+    trust_badges: list[CopyTrustBadge] = Field(default_factory=list, max_length=4)
+    rich_amenities: list[CopyAmenity] = Field(default_factory=list, max_length=12)
+    welcome_quote: Optional[str] = None       # italic-serif lead in welcome section
+    welcome_paragraph: Optional[str] = None   # body of welcome section (separate from about)
+    pricing: Optional[CopyPricing] = None
+    cta_strip_headline: Optional[str] = None  # final CTA strip headline; default if None
+    # Per-community brand overrides. Hex strings; rendered as inline <style>.
+    theme_ink_bg: Optional[str] = None        # primary dark background (deep brand)
+    theme_sage: Optional[str] = None          # accent color (button, eyebrow, links)
+    theme_amber: Optional[str] = None         # secondary accent (gold/warm tone)
 
 
 class ManifestEntry(_Strict):

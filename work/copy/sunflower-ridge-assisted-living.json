@@ -1,0 +1,127 @@
+{
+  "slug": "sunflower-ridge-assisted-living",
+  "seo_title": "Sunflower Ridge Senior Living — Centerville, UT",
+  "seo_description": "A small, family-run senior living home in Centerville, Utah. Eight residents. 24/7 care. All-inclusive monthly pricing.",
+  "hero_headline": "Re-imagine the assisted&nbsp;living <em class=\"serif\">experience.</em>",
+  "hero_subhead": "Sunflower Ridge is a small, family-run home where eight residents live as a family — with the help they need, the dignity they deserve, and a porch that's always warm in the afternoon.",
+  "hero_image_path": "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=2000&q=80&auto=format&fit=crop",
+  "about_paragraph": "Sunflower Ridge is one house with eight residents, run by a family that knows everyone by name and lives like the help is personal. Because it is.",
+  "welcome_quote": "Most assisted living communities are built around <strong>scale</strong>: dozens or hundreds of residents, long hallways, name tags, and rotating staff. We've built around something else.",
+  "welcome_paragraph": "We bundle daily life into one straightforward monthly fee — meals, housekeeping, activities, care, and the things you don't think about. We meet residents where they are today and adapt as life changes.",
+  "services": [
+    {
+      "key": "assisted_living",
+      "headline": "Assisted Living",
+      "body": "Day-to-day support for the practical things — bathing, dressing, medication, mobility — without giving up the independence that makes a day feel like one's own."
+    },
+    {
+      "key": "memory_care",
+      "headline": "Memory Care",
+      "body": "Specialized support for residents living with dementia or Alzheimer's, in a calm environment built around routine, familiarity, and the dignity of being known."
+    },
+    {
+      "key": "adult_day_care",
+      "headline": "Adult Day Care",
+      "body": "Flexible daytime care so your parent has companionship, meals, and a watchful eye — and you have the workday back."
+    },
+    {
+      "key": "respite_care",
+      "headline": "Respite Care",
+      "body": "Short-term stays for recovery after surgery, a needed break for family caregivers, or a trial week before deciding on the long-term move."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "What's actually included in the monthly rate?",
+      "answer": "Room, three meals a day plus snacks, all care (bathing, dressing, medication, mobility), the beautician, the dental visit, activities, devotionals, the dog. We don't tier you by 'level of care.' One rate, no upcharges."
+    },
+    {
+      "question": "What if my parent's needs change?",
+      "answer": "We sit down with the family, talk it through, and update the care plan. Most changes happen gradually, and we work to keep transitions as gentle as possible — same room, same staff, just a little more support. We don't move people to a new wing or raise the rate when needs shift."
+    },
+    {
+      "question": "Can residents bring their own furniture?",
+      "answer": "Yes — and we strongly encourage it. The familiar chair, the photographs, the bedside lamp from home — these matter. We'll help measure the room ahead of move-in so you can plan what fits."
+    },
+    {
+      "question": "Is someone awake at night?",
+      "answer": "Yes. There is always at least one caregiver awake and on shift — not just on call — overnight, every night. That's non-negotiable."
+    },
+    {
+      "question": "Can residents come and go as they please?",
+      "answer": "Yes. Family visits, outings, holidays, appointments — we just like to know so we can coordinate care and meals. Assisted living means support, not loss of independence."
+    },
+    {
+      "question": "Do you allow pets?",
+      "answer": "Visiting pets are welcome. Our resident dog is hard not to fall for. For move-in pets, we look at it case by case — small, settled animals are usually fine."
+    }
+  ],
+  "photo_gallery_paths": [
+    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&q=80&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=700&q=80&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1200&q=80&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=700&q=80&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=700&q=80&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=700&q=80&auto=format&fit=crop"
+  ],
+  "primary_cta_text": "Schedule a Visit",
+  "hero_stats": [
+    {"value": "8", "label": "Residents,<br>not eighty"},
+    {"value": "24", "suffix": "/7", "label": "Caregiver presence"},
+    {"value": "4", "label": "Care types<br>offered"},
+    {"value": "$3,600", "label": "Avg. all-in monthly cost"}
+  ],
+  "differentiators": [
+    {
+      "number": "01",
+      "headline": "Eight residents — by design.",
+      "body": "We could fit more. We don't. A small home means caregivers know what every resident eats for breakfast, sleeps with, worries about. The math of attention only works at this size."
+    },
+    {
+      "number": "02",
+      "headline": "Family-style, not facility-style.",
+      "body": "Meals are served at one table. Activities are picked by the people doing them. The dog isn't a 'therapy animal' — it just lives here. The whole place is built like a home, because it is one."
+    },
+    {
+      "number": "03",
+      "headline": "Care plans that change as life does.",
+      "body": "Aging is rarely a straight line. We review and adjust each resident's care plan as needs shift — without renegotiating contracts, raising the rate, or moving them to a new wing."
+    }
+  ],
+  "trust_badges": [
+    {"label": "State-Licensed", "sublabel": "Utah Department of Health"},
+    {"label": "Small-Home Model", "sublabel": "Eight residents, not eighty"},
+    {"label": "Family-Owned", "sublabel": "Operated by the same family"},
+    {"label": "All-Inclusive Pricing", "sublabel": "One rate. No upcharges."}
+  ],
+  "rich_amenities": [
+    {"name": "Three home-cooked meals", "description": "Real food, served at the table. Vegetarian options always on the menu."},
+    {"name": "Pet-friendly home", "description": "Visiting pets are welcome. Our resident dog is hard not to fall for."},
+    {"name": "Onsite beautician", "description": "Weekly haircuts, set styles, and the occasional pampering day."},
+    {"name": "Onsite dental", "description": "Monthly visits from a dental professional, no transport needed."},
+    {"name": "Devotional services", "description": "Weekly devotionals and pastoral visits for residents who want them."},
+    {"name": "Private bathrooms", "description": "Each room has its own bathroom — privacy and dignity built in."},
+    {"name": "Resident-led activities", "description": "Residents help plan the monthly calendar. It shows in what gets chosen."},
+    {"name": "Indoor & outdoor spaces", "description": "Living rooms with good light. A porch and yard for warm afternoons."},
+    {"name": "Medication management", "description": "Trained caregivers handle scheduling, dosing, and refills."},
+    {"name": "24/7 caregiver presence", "description": "Someone is always awake and on shift. Always."},
+    {"name": "Mobility & grooming help", "description": "Help with bathing, dressing, grooming, and getting from A to B."},
+    {"name": "Personalized care plans", "description": "Reviewed and adjusted as things change. As they will."}
+  ],
+  "pricing": {
+    "from_dollars": 2900,
+    "avg_dollars": 3600,
+    "intro": "Most communities tier you by \"level of care\" and add fees as the months go on. We don't. The monthly rate covers room, meals, care, activities, the beautician, the dental visit, the dog. We figure out what your parent actually needs together — on the tour.",
+    "includes": [
+      "All meals & snacks",
+      "Personal care & medication",
+      "Beautician & dental visits",
+      "24/7 caregiver presence",
+      "Activities & devotionals"
+    ]
+  },
+  "cta_strip_headline": "A loving, home environment families would be proud to have their own mom and dad live in.",
+  "theme_ink_bg": null,
+  "theme_sage": null,
+  "theme_amber": null
+}

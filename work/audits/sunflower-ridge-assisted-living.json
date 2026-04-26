@@ -1,0 +1,25 @@
+{
+  "monday_item_id": "manual-0001",
+  "name": "Sunflower Ridge Assisted Living",
+  "slug": "sunflower-ridge-assisted-living",
+  "url": "https://sunflowerridgeassistedliving.com/",
+  "fetched_at": "2026-04-26T02:45:41.189242Z",
+  "status_code": null,
+  "is_bad": true,
+  "critical_failures": [
+    "site_does_not_load"
+  ],
+  "standard_failures": [
+    "no_primary_cta_above_fold"
+  ],
+  "scores": {
+    "site_loads": false,
+    "mobile_responsive": false,
+    "owns_identity": true,
+    "primary_cta_above_fold": false,
+    "recent_update_signal": true,
+    "lighthouse_perf": null
+  },
+  "screenshot_path": "work/audits/sunflower-ridge-assisted-living.png",
+  "notes": "HTTP probe failed; status_code=None Site has broken TLS (cert SAN mismatch) and Cloudflare WAF returning 403/HTML-junk to non-browser UAs. Playwright (chromium-headless-shell, stock chromium, and channel='chrome') all timeout on goto() — headless-browser fingerprinting blocks render. WebFetch also fails on TLS. Site is correctly classified bad; for demo content, falling back to PROJECT_PLAN §13 (curated-stock photo + generic-but-warm copy with no invented staff/pricing/services)."
+}

@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-04-26T03:40:36.669488Z",
+  "communities": [
+    {
+      "monday_item_id": "manual-0001",
+      "name": "Sunflower Ridge Assisted Living",
+      "slug": "sunflower-ridge-assisted-living",
+      "address": "41 East Center Street, Centerville, UT 84014",
+      "phone": "(801) 397-5544",
+      "original_url": "https://sunflowerridgeassistedliving.com/",
+      "demo_url": "https://assistedwebsite.netlify.app/sunflower-ridge-assisted-living/",
+      "audit_summary": "Existing site is flagged because the site does not load reliably (TLS or network errors), the page is not mobile-responsive, and there is no clear tour CTA above the fold.",
+      "photos_used_count": 7,
+      "screenshot_before": null,
+      "screenshot_after": null
+    }
+  ]
+}
