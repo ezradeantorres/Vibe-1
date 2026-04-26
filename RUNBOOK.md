@@ -5,6 +5,78 @@ sandbox can't install a browser or reach external sites, so the Playwright
 stages (`audit`, `scrape`) must run on a real workstation. After running each
 stage, commit the produced artifacts so the in-session agent can review them.
 
+## Current state (2026-04-26) — read this first
+
+**Operators on deck:** Ezra + Ted. Either of you can run the steps below.
+**Active branch:** `silverlist/phase-1-mvp`. All work commits here. `main`
+is the deploy branch — only merge a community's `public/<slug>/` into `main`
+once Ezra approves it on his phone.
+
+**Decisions locked in this session:**
+
+- **Community #1:** Sunflower Ridge Assisted Living
+  (`https://sunflowerridgeassistedliving.com/`). Already in
+  `data/selected_for_mvp.csv` as `manual-0001`.
+- **Visual reference for the template:** Meridian Senior Living's Crescent
+  page (Sandy, UT) — URL Ezra shared in chat. Goal stated by Ezra: *"their
+  community colors, photos, info, and more modern buttons and style."* Use
+  Meridian's layout/IA as the structural reference; pull colors + photos +
+  copy from each individual community.
+- **Phase 1 LLM mode:** manual, in-session (per `CLAUDE.md`). No
+  `ANTHROPIC_API_KEY` needed. `src/lib/llm.py` is intentionally not built.
+- **Deploy target:** `https://assistedwebsite.netlify.app/<slug>/` via
+  Netlify ↔ GitHub auto-deploy on push to `main`.
+
+**What's already built on this branch:**
+
+- `src/audit.py` — deterministic checks + screenshot per row
+- `src/scrape.py` — Playwright render + photo download
+- `src/lib/paths.py`, `src/lib/schema.py` — pipeline contracts
+- `public/index.html` placeholder, `public/_headers`, `public/robots.txt`
+- `data/selected_for_mvp.csv` seeded with Sunflower Ridge
+
+**Not yet built:** `src/generate.py`, `src/deploy.py`,
+`src/templates/warm_traditional/`, `src/prompts/`. These come **after** the
+audit/scrape artifacts for Sunflower Ridge are in the repo and the in-session
+agent has eyeballed the Meridian reference.
+
+**Three blocking items waiting on the operator (run in any order):**
+
+1. **Verify Netlify auto-deploy works.** Confirm
+   `https://assistedwebsite.netlify.app/` returns the placeholder
+   `public/index.html` and that `curl -I` shows
+   `X-Robots-Tag: noindex, nofollow`. If not, fix the Netlify ↔ GitHub
+   connection before going further.
+2. **Drop the Meridian/Crescent reference screenshot** at
+   `references/meridian-crescent-fullpage.png` (full-page capture, see
+   "Visual reference screenshots" below). Force-add and push.
+3. **Run audit + scrape on Sunflower Ridge** on a real workstation:
+
+   ```bash
+   git checkout silverlist/phase-1-mvp && git pull
+   python -m src.audit  data/selected_for_mvp.csv
+   python -m src.scrape data/selected_for_mvp.csv
+   git add -f work/audits/sunflower-ridge-assisted-living.json \
+             work/audits/sunflower-ridge-assisted-living.png \
+             work/scrapes/sunflower-ridge-assisted-living/rendered.html \
+             work/scrapes/sunflower-ridge-assisted-living/scrape.json \
+             work/scrapes/sunflower-ridge-assisted-living/photos/
+   git commit -m "Add work artifacts for sunflower-ridge-assisted-living"
+   git push
+   ```
+
+Once those three land, the in-session agent will: fill
+`primary_cta_above_fold` + `is_bad` on the audit, fill the extracted fields
+on the scrape JSON, build out the template under
+`src/templates/warm_traditional/` against the Meridian reference, write
+`src/generate.py`, and produce `public/sunflower-ridge-assisted-living/` for
+review.
+
+**Note on branch naming:** any task description that mentions
+`claude/create-epoxy-flooring-site-Tuqm1` is an auto-generated branch name
+from a previous unrelated session and should be ignored. Develop on
+`silverlist/phase-1-mvp`.
+
 ## One-time setup
 
 ```bash

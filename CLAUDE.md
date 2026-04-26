@@ -52,3 +52,7 @@ This repo is connected to one Netlify site. Build settings: production branch `m
 ## First action when picking up this repo
 
 If this is a fresh checkout: read `PROJECT_PLAN.md` end-to-end, then execute the task list in **Appendix A** of that document, in order, applying the Phase 1 deviation above.
+
+## Current state — for the next operator
+
+`RUNBOOK.md` §"Current state" carries the dated snapshot of where the pipeline is, what's been decided, what's blocked, and the exact commands the next operator (Ezra or Ted) should run. Read it before touching anything — it overrides any stale assumptions in this file or `PROJECT_PLAN.md`.
