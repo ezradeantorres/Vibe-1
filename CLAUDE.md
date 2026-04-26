@@ -33,16 +33,9 @@ This is a deliberate Phase 1 simplification, not a Phase 2 architecture. The Ant
 
 ## Where the pipeline scripts actually run
 
-The Claude Code sandbox where this repo is edited cannot install a browser (blocked CDN, no sudo). All Playwright-driven steps (`src/audit.py`, `src/scrape.py`) run on the **operator's local machine**, not in the editing sandbox. The operator sets up once with:
+The Claude Code sandbox where this repo is edited cannot install a browser (blocked CDN, no sudo) and is locked to a host denylist for outbound traffic. All Playwright-driven steps (`src/audit.py`, `src/scrape.py`) run on the **operator's local machine**, not in the editing sandbox. See `RUNBOOK.md` for the exact commands.
 
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
-python -m playwright install chromium
-cp .env.example .env  # currently empty — Phase 1 needs no secrets
-```
-
-After running an agent, the operator commits the produced artifacts under `work/` (gitignored by default — flip per artifact if a Claude Code review is needed) or pastes the relevant artifact into a Claude Code session for the manual LLM step.
+After running an agent, the operator force-adds the produced artifacts under `work/` (gitignored by default — `git add -f` per artifact when an in-session review is needed) and pushes. The in-session agent reads the artifacts via the repo and produces the next-stage JSON.
 
 ## Deploy model: Netlify <-> GitHub auto-deploy
 
