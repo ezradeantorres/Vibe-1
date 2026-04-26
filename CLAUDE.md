@@ -39,10 +39,22 @@ The Claude Code sandbox where this repo is edited cannot install a browser (bloc
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 python -m playwright install chromium
-cp .env.example .env  # then fill in NETLIFY_AUTH_TOKEN
+cp .env.example .env  # currently empty — Phase 1 needs no secrets
 ```
 
 After running an agent, the operator commits the produced artifacts under `work/` (gitignored by default — flip per artifact if a Claude Code review is needed) or pastes the relevant artifact into a Claude Code session for the manual LLM step.
+
+## Deploy model: Netlify <-> GitHub auto-deploy
+
+This repo is connected to one Netlify site. Build settings: production branch `main`, publish directory `public/`, no build command (the generated sites are plain static HTML). Pushing to `main` auto-deploys.
+
+- Each community demo lives at `public/<slug>/index.html` and is reachable at `<netlify-site>.netlify.app/<slug>/`.
+- Site-wide compliance (`PROJECT_PLAN.md` §13) is enforced by:
+  - `public/_headers` setting `X-Robots-Tag: noindex,nofollow` for every path.
+  - `public/robots.txt` disallowing all crawlers.
+  - Each generated `index.html` also carrying its own `<meta name="robots" content="noindex,nofollow">` as belt-and-suspenders.
+- The apex `<netlify-site>.netlify.app` serves a generic placeholder (`public/index.html`) — no demo list, no branding, no public surface.
+- Workflow: develop on `silverlist/phase-1-mvp`, merge a community's `public/<slug>/` directory into `main` once Ezra approves it on his phone, push, Netlify deploys within ~30s, send the URL to the operator.
 
 ## First action when picking up this repo
 
