@@ -25,14 +25,24 @@ once Ezra approves it on his phone.
   (`https://sunflowerridgeassistedliving.com/`). Already in
   `data/selected_for_mvp.csv` as `manual-0001`.
 - **Visual reference for the template:** Meridian Senior Living's Crescent
-  page (Sandy, UT) — URL Ezra shared in chat. Goal stated by Ezra: *"their
-  community colors, photos, info, and more modern buttons and style."* Use
-  Meridian's layout/IA as the structural reference; pull colors + photos +
-  copy from each individual community.
+  page —
+  `https://www.meridiansenior.com/senior-living/ut/sandy/crescent-senior-living/`.
+  Goal stated by Ezra: *"their community colors, photos, info, and more
+  modern buttons and style."* Use Meridian's layout/IA as the structural
+  reference; pull colors + photos + copy from each individual community.
 - **Phase 1 LLM mode:** manual, in-session (per `CLAUDE.md`). No
   `ANTHROPIC_API_KEY` needed. `src/lib/llm.py` is intentionally not built.
 - **Deploy target:** `https://assistedwebsite.netlify.app/<slug>/` via
   Netlify ↔ GitHub auto-deploy on push to `main`.
+
+**Netlify project facts (for debugging):**
+
+- Project name: `assistedwebsite`
+- Project ID (Site ID): `88c4e572-0e72-4aea-a0b8-cd6775db8553`
+- Owner: `Hidden Gem`
+- Connected to repo `ezradeantorres/Vibe-1` — GitHub webhook confirmed
+  firing (last deploy was triggered automatically on push).
+- Production URL: `https://assistedwebsite.netlify.app/`
 
 **What's already built on this branch:**
 
@@ -49,11 +59,31 @@ agent has eyeballed the Meridian reference.
 
 **Three blocking items waiting on the operator (run in any order):**
 
-1. **Verify Netlify auto-deploy works.** Confirm
-   `https://assistedwebsite.netlify.app/` returns the placeholder
-   `public/index.html` and that `curl -I` shows
-   `X-Robots-Tag: noindex, nofollow`. If not, fix the Netlify ↔ GitHub
-   connection before going further.
+1. **Fix Netlify publish directory (was: "verify deploy works").** As of the
+   most recent operator check (Ezra, 2026-04-26), the site is connected and
+   the GitHub webhook is firing — the dashboard's project thumbnail is the
+   smoking gun: it shows a Netlify "Page not found" page instead of our
+   placeholder. The repo side is verified clean (`public/index.html`,
+   `public/_headers`, `public/robots.txt` all correct on `origin/main` at
+   commit `8631811`). Root cause: **publish directory in the dashboard is
+   not set to `public`** — Netlify is publishing from the repo root, can't
+   find an `index.html` there, returns 404. Fix:
+
+   - Netlify dashboard → site `assistedwebsite` → **Build & deploy →
+     Continuous deployment**.
+   - Production branch: `main`
+   - Publish directory: `public`
+   - Build command: (empty)
+   - Save → Deploys tab → **Trigger deploy → Deploy site**.
+
+   Then verify:
+
+   ```bash
+   curl -sS https://assistedwebsite.netlify.app/ | grep -i "private staging"
+   curl -sS https://assistedwebsite.netlify.app/robots.txt
+   curl -sS -I https://assistedwebsite.netlify.app/ | grep -i x-robots-tag
+   # expect: x-robots-tag: noindex, nofollow
+   ```
 2. **Drop the Meridian/Crescent reference screenshot** at
    `references/meridian-crescent-fullpage.png` (full-page capture, see
    "Visual reference screenshots" below). Force-add and push.
@@ -83,6 +113,39 @@ review.
 `claude/create-epoxy-flooring-site-Tuqm1` is an auto-generated branch name
 from a previous unrelated session and should be ignored. Develop on
 `silverlist/phase-1-mvp`.
+
+## Why these blockers run on the operator's laptop, not in-session
+
+The Claude Code editing sessions this repo is touched in (when started
+from claude.ai or the Claude mobile/web app) run in a cloud container
+with **no MCP servers attached** (`mcpServers: {}`) and a strict outbound
+host denylist. Every external host involved in the three blockers
+(`assistedwebsite.netlify.app`, `meridiansenior.com`,
+`sunflowerridgeassistedliving.com`, the Playwright download CDN, Google's
+Chrome download CDN) returns `host_not_allowed` on `curl` and `WebFetch`.
+There's no Chrome/Chromium binary installed and no `sudo` to install one.
+That's why all three blockers run on the operator's laptop, not in-session.
+
+The **claude.ai Chrome connector is a separate surface** from Claude
+Code's MCP servers. They share an account but not a tool surface — a
+connector enabled on claude.ai does NOT propagate to Claude Code
+sessions, and vice versa.
+
+To run a Claude Code session that *can* drive Chrome and the network
+end-to-end (i.e., do all three blockers in one go without operator
+hands), run it locally on your laptop with Playwright MCP attached:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+cd ~/path/to/Vibe-1
+claude mcp add playwright npx '@playwright/mcp@latest'
+claude
+```
+
+That session has Playwright's bundled Chromium + your laptop's network
++ filesystem + git, so it can hit the Netlify dashboard, capture the
+Meridian screenshot, run `python -m src.audit`, and push the artifacts
+all in one chat.
 
 ## One-time setup
 
