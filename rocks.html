@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2C2C2E">
+<title>Rocks 101 &middot; Hidden Gem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --basalt: #2C2C2E;
+    --slate: #3D4451;
+    --granite: #5D6E5A;
+    --sandstone: #D4B896;
+    --sandstone-deep: #B8995F;
+    --cream: #F5F1E8;
+    --cream-2: #EDE6D6;
+    --shale: #6B7280;
+    --lava: #C44536;
+    --igneous: linear-gradient(135deg, #6B2E26 0%, #C44536 50%, #E89B5C 100%);
+    --sedimentary: linear-gradient(180deg, #C9A275 0%, #D4B896 25%, #B8995F 50%, #D4B896 75%, #A87B4D 100%);
+    --metamorphic: linear-gradient(110deg, #4A4458 0%, #6B7280 30%, #9CA3AF 55%, #6B7280 80%, #3D4451 100%);
+    --shadow-sm: 0 1px 2px rgba(44,44,46,0.08);
+    --shadow-md: 0 6px 24px rgba(44,44,46,0.10);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: clamp(16px, 4.2vw, 18px);
+    line-height: 1.6;
+    color: var(--basalt);
+    background: var(--cream);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    color: var(--slate);
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5em;
+  }
+  h1 { font-size: clamp(34px, 9vw, 56px); line-height: 1.05; font-weight: 700; }
+  h2 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.15; }
+  h3 { font-size: clamp(20px, 5vw, 24px); line-height: 1.25; }
+  h4 { font-size: 17px; line-height: 1.3; margin: 1em 0 0.35em; }
+  p  { margin: 0 0 1em; }
+  a  { color: var(--granite); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: var(--basalt); }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* ---------- top back-link ---------- */
+  .topbar {
+    padding: 18px 0 0;
+  }
+  .topbar a {
+    font-size: 14px;
+    color: var(--shale);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .topbar a:hover { color: var(--basalt); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    padding: 36px 0 28px;
+    text-align: left;
+  }
+  .hero .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--sandstone-deep);
+    background: rgba(212,184,150,0.18);
+    padding: 6px 12px;
+    border-radius: 100px;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--sandstone-deep);
+  }
+  .hero .lede {
+    font-size: clamp(17px, 4.4vw, 19px);
+    color: var(--slate);
+    max-width: 36ch;
+    margin-top: 18px;
+  }
+
+  /* ---------- section base ---------- */
+  section { padding: 32px 0; }
+  section h2 .num {
+    display: inline-block;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--sandstone-deep);
+    margin-right: 10px;
+    vertical-align: 0.35em;
+  }
+  .sect-intro {
+    color: var(--shale);
+    margin-bottom: 22px;
+    font-size: 16px;
+  }
+
+  /* ---------- rock cards ---------- */
+  .cards { display: grid; gap: 14px; }
+  .rock-card {
+    background: #fff;
+    border: 1px solid var(--cream-2);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .rock-card.is-open { box-shadow: var(--shadow-md); }
+
+  .rock-head {
+    display: grid;
+    grid-template-columns: 64px 1fr 24px;
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    cursor: pointer;
+    user-select: none;
+    min-height: 48px;
+    background: none;
+    border: 0;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+  }
+  .rock-head:focus-visible {
+    outline: 2px solid var(--granite);
+    outline-offset: -2px;
+  }
+  .swatch {
+    width: 64px; height: 64px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  .swatch.igneous     { background: var(--igneous); color: #fff8ee; }
+  .swatch.sedimentary { background: var(--sedimentary); color: #3D2B17; }
+  .swatch.metamorphic { background: var(--metamorphic); color: #E8E4ED; }
+
+  .rock-title {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1.15;
+    color: var(--slate);
+    display: block;
+  }
+  .rock-tag {
+    display: block;
+    font-size: 13px;
+    color: var(--shale);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+  .chev {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-right: 2px solid var(--shale);
+    border-bottom: 2px solid var(--shale);
+    transform: rotate(45deg);
+    transition: transform 0.25s;
+    margin-top: -4px;
+    justify-self: end;
+  }
+  .rock-card.is-open .chev { transform: rotate(-135deg); margin-top: 4px; }
+
+  .rock-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .rock-card.is-open .rock-body { max-height: 1400px; }
+  .rock-body-inner {
+    padding: 4px 18px 22px;
+    border-top: 1px dashed var(--cream-2);
+    margin-top: 0;
+  }
+  .rock-body-inner h4 {
+    color: var(--sandstone-deep);
+    text-transform: uppercase;
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    margin-top: 18px;
+  }
+  .rock-body-inner p { font-size: 16px; }
+  .examples {
+    display: grid;
+    gap: 10px;
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .examples li {
+    background: var(--cream);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+  .examples b {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    color: var(--slate);
+    font-size: 16px;
+  }
+  .examples span {
+    display: block;
+    color: var(--shale);
+    font-size: 14px;
+    margin-top: 2px;
+  }
+
+  /* ---------- comparison ---------- */
+  .compare {
+    display: grid;
+    gap: 14px;
+  }
+  .compare-card {
+    background: #fff;
+    border: 1px solid var(--cream-2);
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .compare-card h3 {
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .compare-card .dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+  }
+  .compare-card .dot.igneous     { background: var(--igneous); }
+  .compare-card .dot.sedimentary { background: var(--sedimentary); }
+  .compare-card .dot.metamorphic { background: var(--metamorphic); }
+  .compare-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px dashed var(--cream-2);
+    font-size: 15px;
+  }
+  .compare-row:first-of-type { border-top: 0; }
+  .compare-row dt {
+    color: var(--sandstone-deep);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 600;
+    align-self: center;
+  }
+  .compare-row dd { margin: 0; color: var(--basalt); }
+
+  /* ---------- rock cycle ---------- */
+  .cycle-wrap {
+    background: #fff;
+    border: 1px solid var(--cream-2);
+    border-radius: 18px;
+    padding: 22px 12px 18px;
+    text-align: center;
+  }
+  .cycle-svg {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+  .cycle-legend {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    text-align: left;
+    padding: 0 8px;
+    font-size: 14px;
+    color: var(--shale);
+  }
+  .cycle-legend b { color: var(--basalt); font-weight: 600; }
+
+  /* ---------- quiz ---------- */
+  .quiz-card {
+    background: #fff;
+    border: 1px solid var(--cream-2);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .quiz-q {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--slate);
+    margin: 0 0 14px;
+    line-height: 1.3;
+  }
+  .quiz-q .qnum {
+    display: inline-block;
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--sandstone-deep);
+    margin-right: 8px;
+    vertical-align: 0.25em;
+  }
+  .quiz-choices {
+    display: grid;
+    gap: 8px;
+  }
+  .quiz-choice {
+    appearance: none;
+    background: var(--cream);
+    border: 1.5px solid transparent;
+    color: var(--basalt);
+    text-align: left;
+    padding: 13px 16px;
+    border-radius: 12px;
+    font: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    min-height: 48px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .quiz-choice:hover:not(:disabled) {
+    background: var(--cream-2);
+  }
+  .quiz-choice:disabled { cursor: default; }
+  .quiz-choice .mark {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.06);
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    font-size: 13px;
+    color: transparent;
+    font-weight: 700;
+  }
+  .quiz-choice.correct {
+    background: rgba(93,110,90,0.14);
+    border-color: var(--granite);
+    color: var(--basalt);
+  }
+  .quiz-choice.correct .mark {
+    background: var(--granite);
+    color: #fff;
+  }
+  .quiz-choice.wrong {
+    background: rgba(196,69,54,0.10);
+    border-color: var(--lava);
+    color: var(--basalt);
+  }
+  .quiz-choice.wrong .mark {
+    background: var(--lava);
+    color: #fff;
+  }
+  .quiz-explain {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--cream);
+    border-left: 3px solid var(--sandstone-deep);
+    border-radius: 0 10px 10px 0;
+    font-size: 14px;
+    color: var(--slate);
+    display: none;
+  }
+  .quiz-card.answered .quiz-explain { display: block; }
+
+  .scorebar {
+    position: sticky;
+    bottom: 12px;
+    background: var(--basalt);
+    color: var(--cream);
+    border-radius: 100px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(44,44,46,0.25);
+    margin: 18px auto 0;
+    max-width: 360px;
+    font-size: 15px;
+  }
+  .scorebar b { font-family: "Fraunces", Georgia, serif; font-size: 18px; }
+  .reset-btn {
+    appearance: none;
+    background: var(--sandstone);
+    color: var(--basalt);
+    border: 0;
+    padding: 8px 14px;
+    border-radius: 100px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    min-height: 36px;
+  }
+  .reset-btn:hover { background: var(--sandstone-deep); }
+
+  /* ---------- footer ---------- */
+  footer {
+    text-align: center;
+    padding: 40px 20px 60px;
+    color: var(--shale);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  footer .pebble {
+    display: inline-block;
+    margin: 0 6px;
+    color: var(--sandstone-deep);
+  }
+
+  /* ---------- desktop tweaks ---------- */
+  @media (min-width: 720px) {
+    .wrap { max-width: 720px; padding: 0 32px; }
+    section { padding: 44px 0; }
+    .hero { padding: 56px 0 36px; }
+    .compare { grid-template-columns: 1fr 1fr 1fr; }
+    .compare-card { padding: 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap topbar">
+  <a href="index.html">&larr; Hidden Gem</a>
+</div>
+
+<header class="wrap hero">
+  <span class="eyebrow">Rocks 101</span>
+  <h1>Three kinds of <em>rocks</em>, one little planet.</h1>
+  <p class="lede">Every stone you've ever picked up is one of three things: born of fire, built from layers, or remade by heat &amp; pressure. Here's the pocket guide.</p>
+</header>
+
+<!-- ============ THE THREE TYPES ============ -->
+<section class="wrap">
+  <h2><span class="num">01</span>The Three Types</h2>
+  <p class="sect-intro">Tap a card to dig in.</p>
+
+  <div class="cards">
+
+    <article class="rock-card" data-rock="igneous">
+      <button class="rock-head" aria-expanded="false" aria-controls="body-igneous">
+        <span class="swatch igneous" aria-hidden="true">&#128293;</span>
+        <span>
+          <span class="rock-title">Igneous</span>
+          <span class="rock-tag">Born from fire &middot; cooled magma or lava</span>
+        </span>
+        <span class="chev" aria-hidden="true"></span>
+      </button>
+      <div class="rock-body" id="body-igneous">
+        <div class="rock-body-inner">
+          <h4>How it forms</h4>
+          <p>Molten rock (magma underground, lava above) cools and crystallizes. Cool slowly deep inside the Earth and you get big crystals; cool fast at the surface and you get tiny ones &mdash; or no crystals at all.</p>
+          <h4>Key features</h4>
+          <p>Interlocking crystals, no layering, often very hard. May contain frozen-in gas bubbles (vesicles) if it cooled fast.</p>
+          <h4>Common examples</h4>
+          <ul class="examples">
+            <li><b>Granite</b><span>Slow-cooled deep underground. Speckled pink/gray, the bones of mountain ranges.</span></li>
+            <li><b>Basalt</b><span>Fast-cooled lava. Dark, fine-grained &mdash; covers most of the ocean floor.</span></li>
+            <li><b>Obsidian</b><span>Lava cooled so fast it never crystallized. Volcanic glass &mdash; sharp edges.</span></li>
+            <li><b>Pumice</b><span>Frothy, gas-filled lava. Light enough to float on water.</span></li>
+          </ul>
+          <h4>Where you'll find it</h4>
+          <p>Volcanic regions, mountain cores, mid-ocean ridges. In Utah: the lava flows of Snow Canyon and the granite of Little Cottonwood Canyon.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="rock-card" data-rock="sedimentary">
+      <button class="rock-head" aria-expanded="false" aria-controls="body-sedimentary">
+        <span class="swatch sedimentary" aria-hidden="true">&#127964;</span>
+        <span>
+          <span class="rock-title">Sedimentary</span>
+          <span class="rock-tag">Built from layers &middot; pressed and cemented</span>
+        </span>
+        <span class="chev" aria-hidden="true"></span>
+      </button>
+      <div class="rock-body" id="body-sedimentary">
+        <div class="rock-body-inner">
+          <h4>How it forms</h4>
+          <p>Wind, water, and ice break older rocks into bits. Those sediments settle, pile up, get buried, and slowly cement into stone. Sometimes the rock precipitates straight out of seawater, or is built from the shells of tiny sea creatures.</p>
+          <h4>Key features</h4>
+          <p>Visible layers (strata), often softer than other rock types. The only kind that can carry fossils. May fizz with vinegar (limestone), split into sheets (shale), or feel gritty (sandstone).</p>
+          <h4>Common examples</h4>
+          <ul class="examples">
+            <li><b>Sandstone</b><span>Cemented sand grains. The orange cliffs of Zion and Arches &mdash; hello, southern Utah.</span></li>
+            <li><b>Limestone</b><span>Often built from ancient shells &amp; coral. Fizzes when you drip vinegar on it.</span></li>
+            <li><b>Shale</b><span>Compacted mud. Splits into thin flakes; the original source of most fossil fuels.</span></li>
+            <li><b>Conglomerate</b><span>Rounded pebbles glued together &mdash; nature's concrete.</span></li>
+          </ul>
+          <h4>Where you'll find it</h4>
+          <p>Riverbeds, deserts, ancient seabeds, basically anywhere flat. In Utah: nearly every red, orange, or tan cliff you've ever photographed.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="rock-card" data-rock="metamorphic">
+      <button class="rock-head" aria-expanded="false" aria-controls="body-metamorphic">
+        <span class="swatch metamorphic" aria-hidden="true">&#128142;</span>
+        <span>
+          <span class="rock-title">Metamorphic</span>
+          <span class="rock-tag">Remade &middot; heat + pressure, no melting</span>
+        </span>
+        <span class="chev" aria-hidden="true"></span>
+      </button>
+      <div class="rock-body" id="body-metamorphic">
+        <div class="rock-body-inner">
+          <h4>How it forms</h4>
+          <p>An existing rock (igneous or sedimentary) gets buried deep, squeezed, and heated &mdash; but doesn't quite melt. Its minerals re-grow, line up, or swap into new ones. The result is the same chemistry, reorganized.</p>
+          <h4>Key features</h4>
+          <p>Often banded or foliated (stripes from minerals lining up under pressure). Usually denser and harder than the parent rock. Sometimes sparkly with mica or shot through with veins.</p>
+          <h4>Common examples</h4>
+          <ul class="examples">
+            <li><b>Marble</b><span>Limestone, recooked. Smooth, sometimes swirly &mdash; the stuff of statues.</span></li>
+            <li><b>Slate</b><span>Shale, squeezed. Splits into perfect flat plates &mdash; old-school chalkboards and roof tiles.</span></li>
+            <li><b>Gneiss</b><span>Granite or shale, cranked up. Strongly banded light/dark stripes (pronounced "nice").</span></li>
+            <li><b>Schist</b><span>Mica-rich and sparkly in the sun. Common in old mountain belts.</span></li>
+          </ul>
+          <h4>Where you'll find it</h4>
+          <p>The cores of mountain ranges, deep continental crust, old collision zones. In Utah: parts of the Wasatch and the Uinta Range expose ancient metamorphic rock.</p>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============ AT A GLANCE ============ -->
+<section class="wrap">
+  <h2><span class="num">02</span>At a Glance</h2>
+  <p class="sect-intro">The cheat sheet, side by side.</p>
+
+  <div class="compare">
+
+    <article class="compare-card">
+      <h3><span class="dot igneous"></span>Igneous</h3>
+      <dl>
+        <div class="compare-row"><dt>Origin</dt><dd>Cooled magma / lava</dd></div>
+        <div class="compare-row"><dt>Texture</dt><dd>Crystals, no layers</dd></div>
+        <div class="compare-row"><dt>Forms in</dt><dd>Minutes to millions of years</dd></div>
+        <div class="compare-row"><dt>Famous</dt><dd>Granite, basalt, obsidian</dd></div>
+        <div class="compare-row"><dt>In Utah</dt><dd>Snow Canyon lava, Cottonwood granite</dd></div>
+      </dl>
+    </article>
+
+    <article class="compare-card">
+      <h3><span class="dot sedimentary"></span>Sedimentary</h3>
+      <dl>
+        <div class="compare-row"><dt>Origin</dt><dd>Settled &amp; cemented bits</dd></div>
+        <div class="compare-row"><dt>Texture</dt><dd>Layers, grains, fossils</dd></div>
+        <div class="compare-row"><dt>Forms in</dt><dd>Thousands to millions of years</dd></div>
+        <div class="compare-row"><dt>Famous</dt><dd>Sandstone, limestone, shale</dd></div>
+        <div class="compare-row"><dt>In Utah</dt><dd>Zion, Arches, Bryce, Moab</dd></div>
+      </dl>
+    </article>
+
+    <article class="compare-card">
+      <h3><span class="dot metamorphic"></span>Metamorphic</h3>
+      <dl>
+        <div class="compare-row"><dt>Origin</dt><dd>Reheated &amp; squeezed rock</dd></div>
+        <div class="compare-row"><dt>Texture</dt><dd>Banded, foliated, dense</dd></div>
+        <div class="compare-row"><dt>Forms in</dt><dd>Millions of years, deep</dd></div>
+        <div class="compare-row"><dt>Famous</dt><dd>Marble, slate, gneiss</dd></div>
+        <div class="compare-row"><dt>In Utah</dt><dd>Wasatch &amp; Uinta cores</dd></div>
+      </dl>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============ ROCK CYCLE ============ -->
+<section class="wrap">
+  <h2><span class="num">03</span>The Rock Cycle</h2>
+  <p class="sect-intro">Any rock can become any other rock &mdash; given enough time.</p>
+
+  <div class="cycle-wrap">
+    <svg class="cycle-svg" viewBox="0 0 360 320" role="img" aria-labelledby="cycle-title">
+      <title id="cycle-title">Diagram of the rock cycle</title>
+      <defs>
+        <linearGradient id="g-ig" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="#6B2E26"/>
+          <stop offset="50%" stop-color="#C44536"/>
+          <stop offset="100%" stop-color="#E89B5C"/>
+        </linearGradient>
+        <linearGradient id="g-sed" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#C9A275"/>
+          <stop offset="50%" stop-color="#D4B896"/>
+          <stop offset="100%" stop-color="#A87B4D"/>
+        </linearGradient>
+        <linearGradient id="g-meta" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="#4A4458"/>
+          <stop offset="50%" stop-color="#9CA3AF"/>
+          <stop offset="100%" stop-color="#3D4451"/>
+        </linearGradient>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#6B7280"/>
+        </marker>
+      </defs>
+
+      <!-- node circles -->
+      <circle cx="180" cy="60"  r="44" fill="url(#g-ig)"   stroke="#3D4451" stroke-width="1.5"/>
+      <circle cx="70"  cy="240" r="44" fill="url(#g-sed)"  stroke="#3D4451" stroke-width="1.5"/>
+      <circle cx="290" cy="240" r="44" fill="url(#g-meta)" stroke="#3D4451" stroke-width="1.5"/>
+
+      <!-- node labels -->
+      <text x="180" y="63"  text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="15" font-weight="600" fill="#fff8ee">Igneous</text>
+      <text x="70"  y="243" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="14" font-weight="600" fill="#3D2B17">Sedimentary</text>
+      <text x="290" y="243" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="14" font-weight="600" fill="#E8E4ED">Metamorphic</text>
+
+      <!-- arrows: ig -> sed -->
+      <path d="M 145 95 Q 90 150 80 195" stroke="#6B7280" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+      <text x="92"  y="155" font-family="Inter, sans-serif" font-size="11" fill="#6B7280">weather</text>
+
+      <!-- arrows: sed -> meta -->
+      <path d="M 115 250 L 245 250" stroke="#6B7280" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+      <text x="180" y="244" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#6B7280">heat + pressure</text>
+
+      <!-- arrows: meta -> ig -->
+      <path d="M 280 195 Q 275 145 215 95" stroke="#6B7280" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+      <text x="265" y="155" font-family="Inter, sans-serif" font-size="11" fill="#6B7280">melt</text>
+
+      <!-- reverse small arrows -->
+      <path d="M 245 260 L 115 260" stroke="#6B7280" stroke-width="1" fill="none" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+      <path d="M 90 195 Q 130 140 155 105" stroke="#6B7280" stroke-width="1" fill="none" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+      <path d="M 215 105 Q 245 140 275 195" stroke="#6B7280" stroke-width="1" fill="none" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+    </svg>
+
+    <div class="cycle-legend">
+      <div><b>Solid arrows</b> show one common path; <b>dashed arrows</b> show that the cycle runs in every direction.</div>
+      <div>An igneous rock can weather into sediment, get buried into metamorphic rock, melt back to magma, and start over.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section class="wrap" id="quiz">
+  <h2><span class="num">04</span>Quick Quiz</h2>
+  <p class="sect-intro">Five questions. Tap an answer to lock it in.</p>
+
+  <div id="quiz-list"></div>
+
+  <div class="scorebar">
+    <span>Score &middot; <b id="score">0</b> / 5</span>
+    <button class="reset-btn" id="reset">Reset</button>
+  </div>
+</section>
+
+<footer>
+  <span class="pebble">&#11044;</span> Made for friends <span class="pebble">&#11044;</span> Hidden Gem <span class="pebble">&#11044;</span> 2026<br>
+  A small geology field guide. No rocks were harmed.
+</footer>
+
+<script>
+  // ----- Card expand / collapse -----
+  document.querySelectorAll('.rock-card').forEach(function(card){
+    var head = card.querySelector('.rock-head');
+    head.addEventListener('click', function(){
+      var open = card.classList.toggle('is-open');
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+
+  // ----- Quiz data -----
+  var QUESTIONS = [
+    {
+      q: "Which rock type can contain fossils?",
+      choices: ["Igneous", "Sedimentary", "Metamorphic", "All three equally"],
+      correct: 1,
+      explain: "Sedimentary rock forms from layers of sediment that gently bury plants, shells, and bones — perfect for preserving fossils. Heat and pressure usually destroy fossils in metamorphic rock, and igneous rock starts as molten magma."
+    },
+    {
+      q: "Granite, basalt, and obsidian are all examples of …",
+      choices: ["Sedimentary rocks", "Metamorphic rocks", "Igneous rocks", "Minerals (not rocks)"],
+      correct: 2,
+      explain: "All three started as molten magma or lava that cooled and solidified — the definition of igneous rock. They differ mainly in how fast they cooled."
+    },
+    {
+      q: "What turns sedimentary rock into metamorphic rock?",
+      choices: ["Melting completely", "Heat and pressure (without melting)", "Wind and rain", "Time alone"],
+      correct: 1,
+      explain: "Metamorphism = changed form. Heat and pressure rearrange the existing minerals into new ones. If it actually melts, you'd get igneous rock instead."
+    },
+    {
+      q: "Most of the orange and red cliffs in southern Utah are…",
+      choices: ["Igneous (cooled lava)", "Sedimentary (mostly sandstone)", "Metamorphic (squeezed shale)", "A mix of all three"],
+      correct: 1,
+      explain: "Zion, Arches, Bryce, and Moab are mostly sandstone — ancient sand dunes and seabeds, cemented and lifted. The color comes from iron oxide (rust) coating the grains."
+    },
+    {
+      q: "Marble is metamorphosed…",
+      choices: ["Granite", "Basalt", "Limestone", "Sandstone"],
+      correct: 2,
+      explain: "Bake limestone deep underground and its calcite crystals re-grow into the smooth, swirly stone we call marble. Sandstone, similarly cooked, becomes quartzite."
+    }
+  ];
+
+  // ----- Render quiz -----
+  var list = document.getElementById('quiz-list');
+  var scoreEl = document.getElementById('score');
+  var score = 0;
+  var answered = 0;
+
+  function renderQuiz(){
+    list.innerHTML = '';
+    score = 0;
+    answered = 0;
+    scoreEl.textContent = '0';
+    QUESTIONS.forEach(function(item, qi){
+      var card = document.createElement('div');
+      card.className = 'quiz-card';
+      card.dataset.qi = qi;
+
+      var qh = document.createElement('p');
+      qh.className = 'quiz-q';
+      qh.innerHTML = '<span class="qnum">Q' + (qi+1) + '</span>' + item.q;
+      card.appendChild(qh);
+
+      var choices = document.createElement('div');
+      choices.className = 'quiz-choices';
+      item.choices.forEach(function(text, ci){
+        var btn = document.createElement('button');
+        btn.className = 'quiz-choice';
+        btn.type = 'button';
+        btn.dataset.ci = ci;
+        btn.innerHTML = '<span class="mark" aria-hidden="true"></span><span>' + text + '</span>';
+        btn.addEventListener('click', function(){ pickAnswer(card, item, ci); });
+        choices.appendChild(btn);
+      });
+      card.appendChild(choices);
+
+      var ex = document.createElement('div');
+      ex.className = 'quiz-explain';
+      ex.textContent = item.explain;
+      card.appendChild(ex);
+
+      list.appendChild(card);
+    });
+  }
+
+  function pickAnswer(card, item, picked){
+    if (card.classList.contains('answered')) return;
+    card.classList.add('answered');
+    var btns = card.querySelectorAll('.quiz-choice');
+    btns.forEach(function(b, i){
+      b.disabled = true;
+      var mark = b.querySelector('.mark');
+      if (i === item.correct){
+        b.classList.add('correct');
+        mark.textContent = '✓';
+      } else if (i === picked){
+        b.classList.add('wrong');
+        mark.textContent = '✗';
+      }
+    });
+    answered++;
+    if (picked === item.correct){
+      score++;
+      scoreEl.textContent = String(score);
+    }
+  }
+
+  document.getElementById('reset').addEventListener('click', function(){
+    renderQuiz();
+    var first = document.querySelector('#quiz');
+    if (first) first.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  renderQuiz();
+</script>
+
+</body>
+</html>
