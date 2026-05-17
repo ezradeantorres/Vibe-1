@@ -22,3 +22,6 @@ node_modules/
 .DS_Store
 .idea/
 .vscode/
+
+# Claude Code per-machine settings (project-wide settings.json stays tracked)
+.claude/settings.local.json

@@ -44,9 +44,16 @@ cp .env.example .env  # currently empty — Phase 1 needs no secrets
 
 After running an agent, the operator commits the produced artifacts under `work/` (gitignored by default — flip per artifact if a Claude Code review is needed) or pastes the relevant artifact into a Claude Code session for the manual LLM step.
 
-## Deploy model: Netlify <-> GitHub auto-deploy
+## Deploy model: two Netlify sites, one repo
 
-This repo is connected to one Netlify site. Build settings: production branch `main`, publish directory `public/`, no build command (the generated sites are plain static HTML). Pushing to `main` auto-deploys.
+This repo backs **two separate Netlify sites**, each pointed at a different directory in this repo. They share `main` as the deploy branch but are otherwise independent. **Do not put files for one site into the other's directory.**
+
+| Netlify site | Publish dir | Base dir | What it is |
+|---|---|---|---|
+| Senior-living demos (apex) | `public/` | *(root)* | The `PROJECT_PLAN.md` pipeline output. `noindex` site-wide. |
+| `hidden-gem-editable` | `.` | `hidden-gem/` | Ezra's wife's site (Hidden Gem). Public, indexable. |
+
+### Senior-living site (`public/`)
 
 - Each community demo lives at `public/<slug>/index.html` and is reachable at `<netlify-site>.netlify.app/<slug>/`.
 - Site-wide compliance (`PROJECT_PLAN.md` §13) is enforced by:
@@ -54,7 +61,18 @@ This repo is connected to one Netlify site. Build settings: production branch `m
   - `public/robots.txt` disallowing all crawlers.
   - Each generated `index.html` also carrying its own `<meta name="robots" content="noindex,nofollow">` as belt-and-suspenders.
 - The apex `<netlify-site>.netlify.app` serves a generic placeholder (`public/index.html`) — no demo list, no branding, no public surface.
-- Workflow: develop on `silverlist/phase-1-mvp`, merge a community's `public/<slug>/` directory into `main` once Ezra approves it on his phone, push, Netlify deploys within ~30s, send the URL to the operator.
+
+### Hidden Gem site (`hidden-gem/`)
+
+- Static multi-page site (`index.html`, `about.html`, `abbey.html`, `sara-equine.html`, `sara-psychiatric.html`) plus `css/`, `js/`, `images/`, and Netlify Functions in `hidden-gem/netlify/functions/` for an in-browser editor.
+- Configured via `hidden-gem/netlify.toml` (read because the Netlify site has **Base directory = `hidden-gem`**). Paths in this file are relative to `hidden-gem/` — never use absolute Mac paths here.
+- Public-facing: `hidden-gem/robots.txt` and `hidden-gem/sitemap.xml` allow indexing. Do **not** apply the senior-living `noindex` headers here.
+- The senior-living `_headers`/`robots.txt` live inside `public/` and only apply to that site, so they do not affect Hidden Gem.
+
+### Workflow for both
+
+- Develop on `silverlist/phase-1-mvp` (senior-living) or `claude/setup-multi-project-repo-ZYx5a` / a feature branch (Hidden Gem). Merge to `main` once approved. Netlify auto-deploys both sites within ~30s of a push to `main`.
+- A push that only touches one site's directory still triggers builds on both Netlify sites, but each site only republishes when its own publish dir actually changes.
 
 ## First action when picking up this repo
 

@@ -54,11 +54,29 @@ npx netlify-cli deploy --prod
 
 ### Element keys
 
-Every block of text (`h1`–`h6`, `p`, `li`, `blockquote`, `figcaption`,
-`button`) gets a stable `data-edit-key` based on the page name and its
-order in the document — e.g. `home:0`, `about:12`. As long as you don't
-reorder or remove elements in the source HTML, the keys stay stable and
-saved text keeps mapping to the right element.
+Every editable element gets a stable `data-edit-key` assigned at page
+load, based on the page name and its order in the document. As long as
+you don't reorder or remove elements in the source HTML, the keys stay
+stable and saved text keeps mapping to the right element.
+
+Two keying namespaces coexist:
+
+- **Legacy namespace `${page}:${idx}`** (e.g. `home:0`, `about:12`) —
+  used for the element types in `EDITABLE_SELECTOR` (`js/editor.js`):
+  `h1`–`h6`, `p`, `li`, `blockquote`, `figcaption`, `button`,
+  `a.btn-primary`, `a.btn-secondary`, `a.btn-white`, `span.cred`,
+  `div.hero-badge`. Indexes here are very index-sensitive — adding a
+  new selector to this list would shift every downstream key and break
+  every existing blob entry. **Don't add to `EDITABLE_SELECTOR`.**
+- **Extended namespace `${page}:ext:${idx}`** (e.g. `home:ext:3`) —
+  used for element types in `EXT_EDITABLE_SELECTOR`: `.section-label`,
+  `.persona-tag`, `.faq-q`, `.faq-a`, footer text (`footer h4`,
+  `footer p`, `footer a`), and nav links (`nav a`, `.nav-links a`).
+  Has its own independent index counter, so adding more categories
+  here does not affect legacy keys. **Add new editable element types
+  to this list.**
+
+Images use `${page}:img:${idx}`, separate from both text namespaces.
 
 ### Backend
 
@@ -91,6 +109,27 @@ The editor does not keep a version history. To undo something, open the
 Netlify Blobs UI (Site → Integrations → Blobs) and delete the field from
 the JSON for that page — the element falls back to the original text
 baked into the HTML.
+
+### Baking live edits into the static HTML
+
+Edits live as overrides on top of the static HTML. On first paint the
+visitor briefly sees the un-edited HTML before `loadOverrides()` swaps
+in the saved content. To eliminate that flash (and to put the live
+content under version control), run from the repo root:
+
+```bash
+pip install requests beautifulsoup4
+python scripts/bake_hidden_gem_edits.py
+```
+
+The script reads each page's overrides from
+`https://hidden-gem-editable.netlify.app/.netlify/functions/content?page=...`,
+applies them to `hidden-gem/*.html`, and downloads any uploaded images
+into `hidden-gem/images/edits/`. Inspect with `git diff hidden-gem/`,
+then commit. The script does not clear the blobs — overlays continue
+to apply at runtime and are now identical to the baked content, which
+is harmless. Re-run the script when enough new edits have accumulated
+to be worth flushing.
 
 ### Security
 

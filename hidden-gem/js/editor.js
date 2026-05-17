@@ -30,6 +30,18 @@ const EDITABLE_SELECTOR = [
   'span.cred', 'div.hero-badge'
 ].join(',');
 
+// Extended categories. These live in a separate keying namespace
+// (`${pageKey}:ext:N`) so adding to this list does NOT shift the indexes
+// of existing `${pageKey}:N` blob entries written by collectEditables().
+// If you need more editable element types, add them here, not above.
+const EXT_EDITABLE_SELECTOR = [
+  '.section-label',
+  '.persona-tag',
+  '.faq-q', '.faq-a',
+  'footer h4', 'footer p', 'footer a',
+  'nav a', '.nav-links a'
+].join(',');
+
 function collectEditables() {
   const nodes = Array.from(document.querySelectorAll(EDITABLE_SELECTOR));
   const result = [];
@@ -45,6 +57,43 @@ function collectEditables() {
     result.push(el);
   }
   return result;
+}
+
+function collectExtraEditables() {
+  const nodes = Array.from(document.querySelectorAll(EXT_EDITABLE_SELECTOR));
+  const result = [];
+  let idx = 0;
+  for (const el of nodes) {
+    if (el.closest('#hg-editor-ui')) continue;
+    if (el.id && el.id.startsWith('hg-')) continue;
+    if (!el.textContent || !el.textContent.trim()) continue;
+    // If this element was already keyed by collectEditables() (e.g. a footer
+    // <a> that also matches a.btn-primary), keep its existing legacy key and
+    // don't double-count it under the :ext: namespace.
+    if (el.dataset.editKey) {
+      result.push(el);
+      continue;
+    }
+    el.dataset.editKey = `${pageKey}:ext:${idx}`;
+    idx++;
+    result.push(el);
+  }
+  return result;
+}
+
+// Merge legacy + extended text editables, deduped by element identity.
+// Order matters: collectEditables() runs first so any element matching
+// both selector lists keeps its legacy `${pageKey}:N` key.
+function collectAllTextEditables() {
+  const seen = new Set();
+  const out = [];
+  for (const el of collectEditables()) {
+    if (!seen.has(el)) { seen.add(el); out.push(el); }
+  }
+  for (const el of collectExtraEditables()) {
+    if (!seen.has(el)) { seen.add(el); out.push(el); }
+  }
+  return out;
 }
 
 function collectEditableImages() {
@@ -64,7 +113,7 @@ function collectEditableImages() {
 
 // ---- Load and apply overrides on every page load --------------------------
 async function loadOverrides() {
-  const textEls = collectEditables();
+  const textEls = collectAllTextEditables();
   const imgEls = collectEditableImages();
   try {
     const res = await fetch(`${CONTENT_URL}?page=${encodeURIComponent(pageKey)}`, { cache: 'no-store' });
@@ -158,7 +207,7 @@ let isEditing = false;
 const originalContent = {};
 
 function enterEditMode(userName) {
-  const editables = collectEditables();
+  const editables = collectAllTextEditables();
   editables.forEach(el => {
     originalContent[el.dataset.editKey] = el.innerHTML;
     el.setAttribute('contenteditable', 'true');
@@ -246,7 +295,7 @@ async function uploadImage(img, file) {
 }
 
 async function saveChanges() {
-  const editables = collectEditables();
+  const editables = collectAllTextEditables();
   const updates = {};
   editables.forEach(el => {
     const key = el.dataset.editKey;
@@ -347,7 +396,7 @@ window.addEventListener('beforeunload', () => {
 
 // ---- Init -----------------------------------------------------------------
 (async function init() {
-  collectEditables();
+  collectAllTextEditables();
   mountUI();
   startPolling();
   await loadOverrides();
