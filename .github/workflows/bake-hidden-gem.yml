@@ -1,0 +1,50 @@
+name: Bake Hidden Gem edits
+
+# Runs the bake script that pulls live overrides out of Netlify Blobs
+# (via the site's own /.netlify/functions/content endpoint) and commits
+# them into the static HTML under hidden-gem/. GitHub-hosted runners have
+# unrestricted internet, so this works where the Claude Code sandbox
+# cannot reach hidden-gem-editable.netlify.app.
+
+on:
+  # Manual trigger from the Actions tab.
+  workflow_dispatch:
+  # Hourly. If there are no new edits the job is a no-op (no commit).
+  schedule:
+    - cron: '0 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bake-hidden-gem
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run bake script
+        run: python scripts/bake_hidden_gem_edits.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add hidden-gem/
+          if git diff --staged --quiet; then
+            echo "No new edits to bake."
+            exit 0
+          fi
+          git commit -m "Bake Hidden Gem edits from Netlify Blobs"
+          git push
