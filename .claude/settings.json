@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:hidden-gem-editable.netlify.app)",
+      "Bash(curl https://hidden-gem-editable.netlify.app/*)",
+      "Bash(curl https://hidden-gem-editable.netlify.app/.netlify/functions/*)",
+      "Bash(python scripts/bake_hidden_gem_edits.py)",
+      "Bash(pip install requests beautifulsoup4)"
+    ]
+  },
+  "sandbox": {
+    "network": {
+      "allowedDomains": [
+        "hidden-gem-editable.netlify.app"
+      ]
+    }
+  }
+}
