@@ -53,15 +53,13 @@ const EXT_EDITABLE_SELECTOR = [
 function collectEditables() {
   const nodes = Array.from(document.querySelectorAll(EDITABLE_SELECTOR));
   const result = [];
-  let idx = 0;
   for (const el of nodes) {
     if (el.closest('#hg-editor-ui')) continue;
     if (el.id && el.id.startsWith('hg-')) continue;
     if (!el.textContent || !el.textContent.trim()) continue;
     if (!el.dataset.editKey) {
-      el.dataset.editKey = `${pageKey}:${idx}`;
+      el.dataset.editKey = `${pageKey}:h${hgHashContent(el.textContent)}`;
     }
-    idx++;
     result.push(el);
   }
   return result;
@@ -70,23 +68,40 @@ function collectEditables() {
 function collectExtraEditables() {
   const nodes = Array.from(document.querySelectorAll(EXT_EDITABLE_SELECTOR));
   const result = [];
-  let idx = 0;
   for (const el of nodes) {
     if (el.closest('#hg-editor-ui')) continue;
     if (el.id && el.id.startsWith('hg-')) continue;
     if (!el.textContent || !el.textContent.trim()) continue;
     // If this element was already keyed by collectEditables() (e.g. a footer
-    // <a> that also matches a.btn-primary), keep its existing legacy key and
-    // don't double-count it under the :ext: namespace.
+    // <a> that also matches a.btn-primary), keep its existing key and
+    // don't double-count.
     if (el.dataset.editKey) {
       result.push(el);
       continue;
     }
-    el.dataset.editKey = `${pageKey}:ext:${idx}`;
-    idx++;
+    el.dataset.editKey = `${pageKey}:ext:h${hgHashContent(el.textContent)}`;
     result.push(el);
   }
   return result;
+}
+
+// Stable content-addressable key. Hashes the element's text content
+// (whitespace-collapsed) into a short base-36 string. Two properties
+// make this drift-resistant:
+//   1. The key is derived from CONTENT, not DOM position, so adding or
+//      removing surrounding elements doesn't shift any existing keys.
+//   2. The key is computed from STATIC HTML on first load (before
+//      loadOverrides runs and mutates innerHTML), then frozen as
+//      data-edit-key. Subsequent re-collections reuse the frozen key.
+// MUST match hg_hash_content() in scripts/bake_hidden_gem_edits.py.
+function hgHashContent(text) {
+  const s = (text || '').replace(/\s+/g, ' ').trim();
+  // DJB2 hash. Stable, no deps, ~32-bit entropy.
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(h, 33) ^ s.charCodeAt(i)) >>> 0;
+  }
+  return h.toString(36);
 }
 
 // Merge legacy + extended text editables, deduped by element identity.

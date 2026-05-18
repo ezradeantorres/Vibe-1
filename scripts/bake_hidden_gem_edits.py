@@ -197,18 +197,54 @@ def download_image(override_value, key):
     return out_path
 
 
+def hg_hash_content(text):
+    """Stable content-addressable hash. MUST match hgHashContent() in
+    hidden-gem/js/editor.js -- same DJB2, same whitespace collapse."""
+    if not text:
+        return "0"
+    import re
+    s = re.sub(r"\s+", " ", text).strip()
+    h = 5381
+    for c in s:
+        h = ((h * 33) ^ ord(c)) & 0xFFFFFFFF
+    # base-36 representation, matches JS's (h >>> 0).toString(36)
+    out = ""
+    n = h
+    if n == 0:
+        return "0"
+    while n > 0:
+        n, r = divmod(n, 36)
+        out = ("0123456789abcdefghijklmnopqrstuvwxyz"[r]) + out
+    return out
+
+
+def _apply_text_value(target, val):
+    """Common: clear target, parse+sanitize val, append, flatten same-tag nesting."""
+    target.clear()
+    fragment = BeautifulSoup(sanitize_override_html(val), "html.parser")
+    for child in list(fragment.contents):
+        target.append(child)
+    _unwrap_self_nested(target)
+
+
 def apply_overrides(soup, overrides):
     text_nodes = collect_text_nodes(soup)
     ext_nodes = collect_ext_text_nodes(soup, text_nodes)
     img_nodes = collect_img_nodes(soup)
+
+    # Build hash-indexed lookups for content-addressable keys (new system).
+    text_by_hash = {hg_hash_content(n.get_text()): n for n in text_nodes}
+    ext_by_hash = {hg_hash_content(n.get_text()): n for n in ext_nodes}
+
     text_count = ext_count = img_count = 0
 
     for key, val in overrides.items():
         parts = key.split(":")
+        last = parts[-1] if parts else ""
 
         if ":img:" in key:
             try:
-                idx = int(parts[-1])
+                idx = int(last)
             except ValueError:
                 print(f"  ! Malformed image key, skipping: {key}")
                 continue
@@ -225,40 +261,51 @@ def apply_overrides(soup, overrides):
             img_count += 1
             continue
 
-        if "ext" in parts:
+        is_ext = "ext" in parts
+        is_hash_key = last.startswith("h") and len(last) > 1
+
+        if is_ext:
+            if is_hash_key:
+                target = ext_by_hash.get(last[1:])
+                if target is None:
+                    # Drift-resistant: blob entry's hash doesn't match any
+                    # current element. Static HTML wins for that slot.
+                    print(f"  - ext hash {last} no match in current DOM; skipping")
+                    continue
+                _apply_text_value(target, val)
+                ext_count += 1
+            else:
+                try:
+                    idx = int(last)
+                except ValueError:
+                    print(f"  ! Malformed ext key, skipping: {key}")
+                    continue
+                if idx >= len(ext_nodes):
+                    print(f"  ! ext idx {idx} out of range; skipping")
+                    continue
+                _apply_text_value(ext_nodes[idx], val)
+                ext_count += 1
+            continue
+
+        # Legacy text namespace.
+        if is_hash_key:
+            target = text_by_hash.get(last[1:])
+            if target is None:
+                print(f"  - text hash {last} no match in current DOM; skipping")
+                continue
+            _apply_text_value(target, val)
+            text_count += 1
+        else:
             try:
-                idx = int(parts[-1])
+                idx = int(last)
             except ValueError:
-                print(f"  ! Malformed ext key, skipping: {key}")
+                print(f"  ! Malformed text key, skipping: {key}")
                 continue
-            if idx >= len(ext_nodes):
-                print(f"  ! ext idx {idx} out of range ({len(ext_nodes)} nodes) for {key}")
+            if idx >= len(text_nodes):
+                print(f"  ! text idx {idx} out of range; skipping")
                 continue
-            target = ext_nodes[idx]
-            target.clear()
-            fragment = BeautifulSoup(sanitize_override_html(val), "html.parser")
-            for child in list(fragment.contents):
-                target.append(child)
-            _unwrap_self_nested(target)
-            ext_count += 1
-            continue
-
-        try:
-            idx = int(parts[-1])
-        except ValueError:
-            print(f"  ! Malformed text key, skipping: {key}")
-            continue
-        if idx >= len(text_nodes):
-            print(f"  ! text idx {idx} out of range ({len(text_nodes)} nodes) for {key}")
-            continue
-
-        target = text_nodes[idx]
-        target.clear()
-        fragment = BeautifulSoup(sanitize_override_html(val), "html.parser")
-        for child in list(fragment.contents):
-            target.append(child)
-        _unwrap_self_nested(target)
-        text_count += 1
+            _apply_text_value(text_nodes[idx], val)
+            text_count += 1
 
     return text_count, ext_count, img_count
 
