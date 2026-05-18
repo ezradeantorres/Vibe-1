@@ -34,6 +34,7 @@ export default async (req) => {
     const existing = (await store.get(page, { type: 'json', consistency: 'strong' })) || {};
     const merged = { ...existing, ...updates };
     await store.setJSON(page, merged);
+    triggerBake('save:' + page).catch(() => {});
     return json({ ok: true, fields: Object.keys(updates).length });
   }
 
@@ -53,10 +54,12 @@ export default async (req) => {
       }
       delete existing[singleKey];
       await store.setJSON(page, existing);
+      triggerBake('reset-field:' + page + ':' + singleKey).catch(() => {});
       return json({ ok: true, page, key: singleKey, cleared: true });
     }
 
     await store.delete(page);
+    triggerBake('reset-page:' + page).catch(() => {});
     return json({ ok: true, page, cleared: true });
   }
 
@@ -81,4 +84,43 @@ function json(obj, status = 200) {
       'cache-control': 'no-store'
     }
   });
+}
+
+// Fire the GitHub Actions bake-hidden-gem workflow so the edit we just
+// saved/cleared gets baked into static HTML within ~60s and propagates
+// to the deployed site. Silent no-op if GH_BAKE_PAT isn't set, so the
+// editor still works end-to-end before the env var is configured.
+//
+// Requires a GitHub Personal Access Token (classic) with `repo` + `workflow`
+// scopes, OR a fine-grained token with `actions: write` on the repo,
+// stored as the Netlify env var GH_BAKE_PAT.
+// Optional overrides: GH_OWNER, GH_REPO (defaults: ezradeantorres / Vibe-1).
+async function triggerBake(reason) {
+  const token = process.env.GH_BAKE_PAT;
+  if (!token) return;
+  const owner = process.env.GH_OWNER || 'ezradeantorres';
+  const repo = process.env.GH_REPO || 'Vibe-1';
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/actions/workflows/bake-hidden-gem.yml/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'User-Agent': 'hidden-gem-editor'
+        },
+        body: JSON.stringify({ ref: 'main' })
+      }
+    );
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      console.error('triggerBake failed', r.status, detail, 'reason=' + reason);
+    } else {
+      console.log('triggerBake ok reason=' + reason);
+    }
+  } catch (err) {
+    console.error('triggerBake error', err, 'reason=' + reason);
+  }
 }
