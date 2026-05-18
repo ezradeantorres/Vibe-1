@@ -317,6 +317,8 @@ function enterEditMode(userName) {
     originalContent[el.dataset.editKey] = el.innerHTML;
     el.setAttribute('contenteditable', 'true');
     el.classList.add('hg-editable');
+    el.addEventListener('focus', showFieldResetFor);
+    el.addEventListener('click', showFieldResetFor);
   });
   const images = collectEditableImages();
   images.forEach(img => {
@@ -332,6 +334,7 @@ function enterEditMode(userName) {
   if (nameEl) nameEl.textContent = userName;
   const link = document.querySelector('.hg-edit-footer-link');
   if (link) link.style.visibility = 'hidden';
+  ensureFieldResetPopover();
   startHeartbeat();
 }
 
@@ -339,12 +342,15 @@ function exitEditMode() {
   document.querySelectorAll('.hg-editable').forEach(el => {
     el.setAttribute('contenteditable', 'false');
     el.classList.remove('hg-editable');
+    el.removeEventListener('focus', showFieldResetFor);
+    el.removeEventListener('click', showFieldResetFor);
   });
   document.querySelectorAll('.hg-img-editable').forEach(img => {
     img.classList.remove('hg-img-editable');
     img.removeAttribute('title');
     img.removeEventListener('click', onImageClick);
   });
+  hideFieldResetPopover();
   document.removeEventListener('click', blockLinkNav, false);
   isEditing = false;
   const saveBar = document.getElementById('hg-save-bar');
@@ -446,6 +452,73 @@ async function saveChanges() {
     alert('Save failed: ' + (err && err.message ? err.message : err));
   } finally {
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+  }
+}
+
+// Floating "Reset this field" popover. One instance for the whole tab.
+// Positioned above the currently-focused editable element so editors
+// can wipe a single blob entry instead of the whole page. Returns the
+// DOM node so callers can show/hide/move it without re-creating it.
+function ensureFieldResetPopover() {
+  let pop = document.getElementById('hg-field-reset');
+  if (pop) return pop;
+  pop = document.createElement('button');
+  pop.id = 'hg-field-reset';
+  pop.type = 'button';
+  pop.textContent = '↺ Reset this field';
+  pop.title = 'Wipe the in-editor change for just this element';
+  pop.addEventListener('mousedown', e => e.preventDefault()); // keep focus
+  pop.addEventListener('click', resetFieldFromPopover);
+  document.body.appendChild(pop);
+  return pop;
+}
+
+function hideFieldResetPopover() {
+  const pop = document.getElementById('hg-field-reset');
+  if (pop) { pop.style.display = 'none'; pop.dataset.targetKey = ''; }
+}
+
+function showFieldResetFor(e) {
+  const el = e.currentTarget;
+  if (!el || !el.dataset.editKey) return;
+  const pop = ensureFieldResetPopover();
+  pop.dataset.targetKey = el.dataset.editKey;
+  const rect = el.getBoundingClientRect();
+  pop.style.display = 'block';
+  pop.style.position = 'absolute';
+  // Park it just above the element's top-right corner, accounting for
+  // scroll. Falls below if there's no room above.
+  const top = window.scrollY + rect.top - 32;
+  pop.style.top = (top > window.scrollY ? top : window.scrollY + rect.bottom + 6) + 'px';
+  pop.style.left = (window.scrollX + Math.max(rect.right - 160, rect.left)) + 'px';
+}
+
+async function resetFieldFromPopover() {
+  const pop = document.getElementById('hg-field-reset');
+  if (!pop || !pop.dataset.targetKey) return;
+  const key = pop.dataset.targetKey;
+  if (!confirm(`Wipe the in-editor change for "${key}"?\n\nThe original page content for just this element will come back on reload. Other edits on this page stay.`)) return;
+  pop.disabled = true;
+  pop.textContent = 'Resetting…';
+  try {
+    const res = await fetch(`${CONTENT_URL}?page=${encodeURIComponent(pageKey)}&key=${encodeURIComponent(key)}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    if (res.status === 401) {
+      handleAuthExpired('Reset failed — please sign in again.');
+      return;
+    }
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${txt}`);
+    }
+    await releaseLock().catch(() => {});
+    window.location.reload();
+  } catch (err) {
+    alert('Reset failed: ' + (err && err.message ? err.message : err));
+    pop.disabled = false;
+    pop.textContent = '↺ Reset this field';
   }
 }
 
@@ -621,6 +694,12 @@ async function onEditClick(e) {
     if (!identity) return; // user cancelled
   }
 
+  // Lazy-mount the heavy save-bar UI now that we know an admin is here.
+  // For first-time auth in this tab, this is what brings #hg-editor-ui
+  // into the DOM at all -- anonymous visitors never see it.
+  collectAllTextEditables();
+  mountSaveBarUI();
+
   try {
     const result = await tryAcquireLock(identity.name);
     if (!result.ok) {
@@ -659,8 +738,15 @@ function neutralizeStaticEditorChrome() {
 }
 
 // ---- Mount footer "edit" link + save bar ----------------------------------
-function mountUI() {
-  neutralizeStaticEditorChrome();
+
+// Whether the heavy save-bar UI has been injected into the DOM. Anonymous
+// visitors never trigger this; it only runs after a successful auth or
+// on a tab that already has a valid token from earlier.
+let saveBarMounted = false;
+
+function mountSaveBarUI() {
+  if (saveBarMounted) return;
+  saveBarMounted = true;
   // Save bar + lock banner (no floating Edit button anymore).
   const wrap = document.createElement('div');
   wrap.id = 'hg-editor-ui';
@@ -682,8 +768,7 @@ function mountUI() {
   if (saveBtn) saveBtn.addEventListener('click', saveChanges);
   if (resetBtn) resetBtn.addEventListener('click', resetPageOverrides);
   if (cancelBtn) cancelBtn.addEventListener('click', cancelEdit);
-
-  mountFooterEditLink();
+  startPolling();
 }
 
 // Inject a discreet "edit" text link into the footer-bottom of the current
@@ -741,8 +826,18 @@ window.addEventListener('beforeunload', () => {
 
 // ---- Init -----------------------------------------------------------------
 (async function init() {
-  collectAllTextEditables();
-  mountUI();
-  startPolling();
+  // Always-on for every visitor: neutralize any leaked editor chrome in
+  // static HTML, fetch blob overrides and apply (sanitized), and mount
+  // the discreet footer "edit" link so admins can sign in.
+  neutralizeStaticEditorChrome();
   await loadOverrides();
+  mountFooterEditLink();
+
+  // Save bar + lock-polling only mount for visitors who already hold a
+  // valid token from this tab session. Fresh anonymous visitors get
+  // none of that injected into their DOM.
+  if (getToken()) {
+    collectAllTextEditables();
+    mountSaveBarUI();
+  }
 })();

@@ -89,6 +89,27 @@
 #hg-reset-btn:hover { background: rgba(255, 156, 156, 0.1); }
 #hg-reset-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Floating "Reset this field" popover — appears next to whichever
+   editable element is focused, lets editors wipe a single blob entry
+   instead of the whole page. */
+#hg-field-reset {
+  display: none;
+  position: absolute;
+  z-index: 9999;
+  background: #1a1a1a;
+  color: #ff9c9c;
+  border: 1px solid rgba(255, 156, 156, 0.5);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font: 500 12px/1.2 'Outfit', sans-serif;
+  letter-spacing: .3px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: background .2s;
+}
+#hg-field-reset:hover { background: #2a1a1a; }
+#hg-field-reset:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ----- Editable-element highlights ------------------------------------ */
 .hg-editable {
   outline: 2px dashed #2d5a4a !important;

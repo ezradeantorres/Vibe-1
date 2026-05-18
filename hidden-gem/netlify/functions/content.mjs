@@ -1,6 +1,7 @@
-// GET    /.netlify/functions/content?page=home   → { "home:0": "...", ... }
-// POST   /.netlify/functions/content              → { page, updates } → merges into blob
-// DELETE /.netlify/functions/content?page=home    → wipes ALL overrides for that page
+// GET    /.netlify/functions/content?page=home              → { "home:0": "...", ... }
+// POST   /.netlify/functions/content                         → { page, updates } → merges into blob
+// DELETE /.netlify/functions/content?page=home               → wipes ALL overrides for that page
+// DELETE /.netlify/functions/content?page=home&key=home:5    → wipes ONE override; rest of page preserved
 //
 // GETs are public (every visitor loads overrides on page view). POSTs
 // and DELETEs require an `x-hg-token` header containing a valid token
@@ -41,6 +42,20 @@ export default async (req) => {
     const url = new URL(req.url);
     const page = url.searchParams.get('page');
     if (!page) return json({ error: 'missing page param' }, 400);
+
+    const singleKey = url.searchParams.get('key');
+    if (singleKey) {
+      // Single-key delete: merge a "minus this key" update into the
+      // existing blob. Leaves all other entries on the page untouched.
+      const existing = (await store.get(page, { type: 'json', consistency: 'strong' })) || {};
+      if (!(singleKey in existing)) {
+        return json({ ok: true, page, key: singleKey, noop: true });
+      }
+      delete existing[singleKey];
+      await store.setJSON(page, existing);
+      return json({ ok: true, page, key: singleKey, cleared: true });
+    }
+
     await store.delete(page);
     return json({ ok: true, page, cleared: true });
   }
