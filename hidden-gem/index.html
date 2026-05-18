@@ -49,6 +49,31 @@
 <link href="css/editor.css" rel="stylesheet"/>
 </head>
 <body data-page="home">
+<!--
+  Hidden form stub for Netlify Forms detection. Netlify's static HTML
+  scanner registers any form with `data-netlify="true"` it finds in the
+  deploy's files. The real submission UI lives in about.html, but
+  Netlify wasn't picking up that file's form (POST returned 404 -- the
+  form was never registered server-side). This stub guarantees detection
+  by living in index.html, which Netlify always scans first. The form
+  is `hidden` so it doesn't render. Field names mirror the real form
+  exactly; if you add/rename a field in about.html, update this too.
+-->
+<form aria-hidden="true" data-netlify="true" hidden="" name="appointment" netlify-honeypot="bot-field">
+<input name="form-name" type="hidden" value="appointment"/>
+<input name="bot-field" type="text"/>
+<input name="subject" type="text"/>
+<input name="first_name" type="text"/>
+<input name="last_name" type="text"/>
+<input name="phone" type="tel"/>
+<input name="email" type="email"/>
+<select name="provider"><option></option></select>
+<input name="preferred_contact" type="radio" value="Phone"/>
+<input name="preferred_contact" type="radio" value="Email"/>
+<input name="preferred_contact" type="radio" value="Either"/>
+<select name="preferred_time"><option></option></select>
+<textarea name="message"></textarea>
+</form>
 <!-- SHARED: NAV -->
 <nav id="nav">
 <div class="nav-inner">
