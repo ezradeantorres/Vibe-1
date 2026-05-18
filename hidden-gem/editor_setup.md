@@ -1,5 +1,16 @@
 # Hidden Gem Healing — Editable Site
 
+> **NOTE (2026-05-18): The email-OTP flow described below has been replaced.**
+> The live editor uses a single shared password (env var `EDITOR_PASSWORD`,
+> default `'chloe'`) — see `hidden-gem/netlify/functions/otp.mjs` and the
+> commit `5ac0cb7` ("Editor: drop email-OTP, gate on shared password
+> 'chloe'") for the switch. The rest of this file (file layout, Netlify
+> Blob stores, lock behavior, Resend-domain setup) is still accurate but
+> the Resend-based OTP step is dead code. For the current architecture see
+> `docs/architecture.md`; for env vars and dashboard config see
+> `docs/runbook.md`; for non-technical "how do I edit" instructions see
+> `docs/editor-handbook.md`. Original setup notes follow.
+
 This folder is a copy of the main site plus an in-page editor. The editor
 is gated by an **email one-time-passcode (OTP)** flow: only the
 hard-coded whitelist of email addresses in
