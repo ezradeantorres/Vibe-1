@@ -25,3 +25,6 @@ node_modules/
 
 # Claude Code per-machine settings (project-wide settings.json stays tracked)
 .claude/settings.local.json
+
+# Claude Code sub-agent worktrees (transient; never tracked)
+.claude/worktrees/
