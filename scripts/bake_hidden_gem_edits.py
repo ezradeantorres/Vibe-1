@@ -57,8 +57,7 @@ EDITABLE_SELECTORS = (
 EXT_EDITABLE_SELECTORS = (
     ".section-label, .persona-tag, .ps-eyebrow, "
     ".faq-q, .faq-a, "
-    "footer h4, footer p, footer a, "
-    "nav a, .nav-links a"
+    "footer h4, footer p, footer a"
 )
 
 

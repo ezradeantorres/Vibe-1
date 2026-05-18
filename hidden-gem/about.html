@@ -58,7 +58,7 @@
 <div class="nav-links">
 <a data-nav="home" href="index.html">Home</a>
 <div class="nav-dropdown">
-<a data-nav="sara">Mental Health</a>
+<a data-nav="sara" href="sara-psychiatric.html">Mental Health</a>
 <div class="dropdown-menu">
 <a data-nav="sara-psych" href="sara-psychiatric.html">Psychiatric Care &amp; Medication</a>
 <a data-nav="sara-equine" href="sara-equine.html">Equine-Assisted Therapy</a>
@@ -260,33 +260,33 @@
 </p>
 <input name="subject" type="hidden" value="New Appointment Request - Hidden Gem Healing"/>
 <div class="fr">
-<div class="fg"><label>First Name</label><input name="first_name" placeholder="First Name" required="" type="text"/></div>
-<div class="fg"><label>Last Name</label><input name="last_name" placeholder="Last Name" required="" type="text"/></div>
+<div class="fg"><label for="appt-first-name">First Name</label><input id="appt-first-name" name="first_name" placeholder="First Name" required="" type="text"/></div>
+<div class="fg"><label for="appt-last-name">Last Name</label><input id="appt-last-name" name="last_name" placeholder="Last Name" required="" type="text"/></div>
 </div>
 <div class="fr">
-<div class="fg"><label>Phone</label><input name="phone" pattern="[\d\s\-\(\)\+]{10,}" placeholder="(000) 000-0000" required="" title="Please enter a 10+ digit phone number" type="tel"/></div>
-<div class="fg"><label>Email</label><input name="email" placeholder="you@email.com" required="" type="email"/></div>
+<div class="fg"><label for="appt-phone">Phone</label><input id="appt-phone" name="phone" pattern="[\d\s\-\(\)\+]{10,}" placeholder="(000) 000-0000" required="" title="Please enter a 10+ digit phone number" type="tel"/></div>
+<div class="fg"><label for="appt-email">Email</label><input id="appt-email" name="email" placeholder="you@email.com" required="" type="email"/></div>
 </div>
 <div class="fg">
-<label>I'd like to see</label>
-<select name="provider" required="">
+<label for="appt-provider">I'd like to see</label>
+<select id="appt-provider" name="provider" required="">
 <option disabled="" selected="" value="">Select a provider</option>
 <option value="Sara Jones - Psychiatric Care / Therapy / EAP">Sara Jones — Psychiatric Care / Therapy / EAP</option>
 <option value="Abbey Lind - Integrative Primary Care">Abbey Lind — Integrative Primary Care</option>
 <option value="Not sure - I'd like guidance">Not sure — I'd like guidance</option>
 </select>
 </div>
-<div class="fg">
-<label>Preferred contact method</label>
+<fieldset class="fg" style="border:none;padding:0;margin-bottom:16px">
+<legend style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;padding:0">Preferred contact method</legend>
 <div style="display:flex;gap:24px;flex-wrap:wrap;padding-top:6px">
 <label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer"><input name="preferred_contact" type="radio" value="Phone"/> Phone</label>
 <label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer"><input name="preferred_contact" type="radio" value="Email"/> Email</label>
 <label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer"><input checked="" name="preferred_contact" type="radio" value="Either"/> Either</label>
 </div>
-</div>
+</fieldset>
 <div class="fg">
-<label>Preferred time of day</label>
-<select name="preferred_time">
+<label for="appt-preferred-time">Preferred time of day</label>
+<select id="appt-preferred-time" name="preferred_time">
 <option selected="" value="No preference">No preference</option>
 <option value="Morning">Morning</option>
 <option value="Midday">Midday</option>
@@ -294,7 +294,7 @@
 <option value="Evening">Evening</option>
 </select>
 </div>
-<div class="fg"><label>What brings you here?</label><textarea name="message" placeholder="Tell us a little about what you're looking for..."></textarea>
+<div class="fg"><label for="appt-message">What brings you here?</label><textarea id="appt-message" name="message" placeholder="Tell us a little about what you're looking for..."></textarea>
 <p style="margin:8px 0 0;font-size:13px;font-style:italic;color:var(--text-light)">Optional. Sara and Abbey both read submissions — please don't include sensitive medical detail in the form.</p>
 </div>
 <button class="btn-primary" style="width:100%;justify-content:center" type="submit">Request Appointment →</button>

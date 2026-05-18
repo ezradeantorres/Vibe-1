@@ -47,8 +47,7 @@ const EXT_EDITABLE_SELECTOR = [
   '.persona-tag',
   '.ps-eyebrow',
   '.faq-q', '.faq-a',
-  'footer h4', 'footer p', 'footer a',
-  'nav a', '.nav-links a'
+  'footer h4', 'footer p', 'footer a'
 ].join(',');
 
 function collectEditables() {
