@@ -261,7 +261,7 @@
 <div class="fg"><label>Last Name</label><input name="last_name" placeholder="Last Name" required="" type="text"/></div>
 </div>
 <div class="fr">
-<div class="fg"><label>Phone</label><input name="phone" placeholder="(000) 000-0000" required="" type="tel"/></div>
+<div class="fg"><label>Phone</label><input name="phone" pattern="[\d\s\-\(\)\+]{10,}" placeholder="(000) 000-0000" required="" title="Please enter a 10+ digit phone number" type="tel"/></div>
 <div class="fg"><label>Email</label><input name="email" placeholder="you@email.com" required="" type="email"/></div>
 </div>
 <div class="fg">
@@ -273,7 +273,27 @@
 <option value="Not sure - I'd like guidance">Not sure — I'd like guidance</option>
 </select>
 </div>
-<div class="fg"><label>What brings you here?</label><textarea name="message" placeholder="Tell us a little about what you're looking for..."></textarea></div>
+<div class="fg">
+<label>Preferred contact method</label>
+<div style="display:flex;gap:24px;flex-wrap:wrap;padding-top:6px">
+<label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer"><input name="preferred_contact" type="radio" value="Phone"/> Phone</label>
+<label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer"><input name="preferred_contact" type="radio" value="Email"/> Email</label>
+<label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer"><input checked="" name="preferred_contact" type="radio" value="Either"/> Either</label>
+</div>
+</div>
+<div class="fg">
+<label>Preferred time of day</label>
+<select name="preferred_time">
+<option value="No preference" selected="">No preference</option>
+<option value="Morning">Morning</option>
+<option value="Midday">Midday</option>
+<option value="Afternoon">Afternoon</option>
+<option value="Evening">Evening</option>
+</select>
+</div>
+<div class="fg"><label>What brings you here?</label><textarea name="message" placeholder="Tell us a little about what you're looking for..."></textarea>
+<p style="margin:8px 0 0;font-size:13px;font-style:italic;color:var(--text-light)">Optional. Sara and Abbey both read submissions — please don't include sensitive medical detail in the form.</p>
+</div>
 <button class="btn-primary" style="width:100%;justify-content:center" type="submit">Request Appointment →</button>
 </form>
 </div>
@@ -336,5 +356,20 @@
 <!-- END SHARED: FOOTER -->
 <script src="js/main.js"></script>
 <script src="js/editor.js" type="module"></script>
+<script>
+(function(){
+  if (window.location.search.indexOf('submitted=true') === -1) return;
+  var form = document.getElementById('contact-form');
+  if (!form) return;
+  var banner = document.createElement('div');
+  banner.setAttribute('role', 'status');
+  banner.style.cssText = 'background:var(--sage);color:#fff;padding:18px 24px;border-radius:12px;margin-bottom:24px;font-size:15px';
+  banner.textContent = 'Thanks! Elena will reach out within 1 business day to confirm.';
+  form.parentNode.insertBefore(banner, form);
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+  }
+})();
+</script>
 </body>
 </html>
