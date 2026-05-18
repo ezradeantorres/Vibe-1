@@ -77,3 +77,62 @@ This repo backs **two separate Netlify sites**, each pointed at a different dire
 ## First action when picking up this repo
 
 If this is a fresh checkout: read `PROJECT_PLAN.md` end-to-end, then execute the task list in **Appendix A** of that document, in order, applying the Phase 1 deviation above.
+
+## Lessons from past sessions (read before working on Hidden Gem)
+
+These are gotchas that have cost real time. They're not theoretical.
+
+### Sub-agent worktree isolation has gaps
+
+`isolation: "worktree"` on the `Agent` tool creates a real isolated git worktree, but it does **not** sandbox file writes. If a prompt or tool call references absolute paths like `/home/user/Vibe-1/hidden-gem/...`, the sub-agent's `Edit`/`Write` can land in the **main tree** instead of (or in addition to) its worktree. Result: agents bleed into main, race with one another, and `git status` between calls becomes unreliable while sub-agents are running.
+
+- Brief sub-agents to use **paths relative to their worktree CWD**, not the repo's absolute path.
+- Always have `.claude/worktrees/` in `.gitignore` **before** spawning sub-agents. A naive `git add -A` afterwards captures each worktree as a mode-160000 gitlink; Netlify then treats them as broken submodules and the build fails.
+- Don't trust working-tree state between consecutive tool calls while sub-agents are running. `git diff` at T1 and `git status` at T2 may legitimately disagree.
+
+### Parallel `Edit`s to the same file collide
+
+Batching multiple `Edit` calls to the same file in one assistant message: only the first applies; the rest error with "file modified since read". Either sequence the edits across messages, or use a single `Write` with the full new contents.
+
+### The hourly bake action will pre-empt your push
+
+`.github/workflows/bake-hidden-gem.yml` runs on `cron: 0 * * * *`. If it fires while you've staged uncommitted HTML changes, it commits BeautifulSoup-reformatted HTML (every attribute requoted, every tag self-closed, whitespace shuffled). A subsequent `git pull --rebase` produces unsalvageable conflicts on every page. Two safe patterns:
+
+- Do non-trivial HTML edits on a feature branch and merge deliberately into `main`.
+- Or batch changes into the ~30-minute window right after a bake commit lands.
+
+### Netlify dashboard config that lives outside the repo
+
+When the repo structure changes (e.g. PR #3's restructure into `hidden-gem/`), the Netlify dashboard's **Base directory** and **Publish directory** must follow. If they don't, the build still "succeeds" (no `[build]` block to fail) but publishes the wrong path — site 404s everywhere and the deploy log gives no clue. Always verify Base + Publish in the dashboard when paths move.
+
+Other settings only the dashboard owns:
+- **Forms → notifications → recipient** for the `appointment` booking form. Currently `etorres@care.life` (testing); switch to `elena@hiddengemhealingutah.com` once submissions are confirmed flowing.
+- **Env vars** for Netlify Functions — including `RESEND_API_KEY` for the editor OTP function (and ideally a verified `hiddengemhealingutah.com` domain in Resend so OTPs don't ship from `onboarding@resend.dev`).
+
+### Sandbox network reality
+
+Claude Code on the web has a platform-level egress firewall that returns `x-deny-reason: host_not_allowed` for any domain outside the environment's network policy. Two important consequences:
+
+- `.claude/settings.json`'s `sandbox.network.allowedDomains` is a separate layer that governs what Claude inside the session is permitted to call. It does **not** override the platform firewall. The entry for `hidden-gem-editable.netlify.app` in this repo is real, but the platform still blocks the host.
+- To actually reach `*.netlify.app` (run `bake_hidden_gem_edits.py`, curl functions, WebFetch the live HTML), the **environment's network policy** must be changed at environment-create time in the Claude Code web app, and a new session started from that environment. The current session can't bypass it. The hourly GitHub Action runs on GitHub-hosted runners, which have unrestricted egress, which is why the bake works there.
+
+### "Send an email to X" always has multiple surfaces
+
+When the ask is "make Y email Z@…", clarify which surface:
+
+1. **Visible** `mailto:` link in HTML (changeable in code)
+2. **Netlify Form notification recipient** (Netlify dashboard only)
+3. **Service-sent email** like OTP / receipts (Netlify Function + Resend / SendGrid env var)
+4. A combination
+
+Conflating these wastes commits. For the Hidden Gem site today: visible mailto links are `info@hiddengemhealingutah.com`; Netlify Form submissions notify `etorres@care.life` (test) and will move to `elena@…` for production; OTP delivery is gated to the whitelist `[etorres@care.life, elena@hiddengemhealingutah.com]` via Resend.
+
+### Editor / Blobs / bake invariants
+
+- `hidden-gem/js/editor.js` `EDITABLE_SELECTOR` + `EXT_EDITABLE_SELECTOR` must mirror `scripts/bake_hidden_gem_edits.py` `EDITABLE_SELECTORS` + `EXT_EDITABLE_SELECTORS` exactly — indexing is positional, so any drift silently corrupts which DOM node a key maps to. Keep the two in sync or break both intentionally.
+- `:ext:` namespace was historically skipped by the bake. It's now (or should be) handled symmetrically — verify before relying on it.
+- `el.innerHTML = data[key]` in `editor.js:124` and `BeautifulSoup.append` in `bake_hidden_gem_edits.py:163` both treat stored content as raw HTML. Whoever can POST to `content.mjs` can therefore inject persistent XSS that survives the bake. The OTP whitelist is the trust boundary; don't widen it without also sanitizing.
+
+### "Locked deploy" framing is a common misdiagnosis
+
+A previous session believed the live Hidden Gem site was stuck on an April deploy because Netlify's "Lock to current deploy" was on. It wasn't — the real cause was the missing Base directory after the restructure. Before assuming the deploy is locked, look at the dashboard's actual "Auto publishing is on/off" state and the most recent deploy's status.
