@@ -56,54 +56,16 @@ nav {
 }
 nav.scrolled { box-shadow: 0 1px 0 rgba(30,58,47,0.08), 0 8px 24px rgba(30,58,47,0.04); }
 
-/* Top utility strip -- quiet phone + Existing Patients above the main nav */
-.nav-utility {
-  background: rgba(61,107,90,0.05);
-  border-bottom: 1px solid rgba(61,107,90,0.06);
-}
-.nav-utility-inner {
-  max-width: 1200px; margin: 0 auto;
-  padding: 5px clamp(20px, 5vw, 48px);
-  display: flex; justify-content: flex-end; align-items: center; gap: 22px;
-}
-.nav-utility a {
-  font-family: 'Outfit', sans-serif;
-  font-size: 12px; color: var(--sage); letter-spacing: .3px;
-  text-decoration: none; transition: color .2s;
-  display: inline-flex; align-items: center; gap: 6px;
-}
-.nav-utility a:hover { color: var(--deep); }
-.nav-util-icon { font-size: 13px; line-height: 1; }
-@media (max-width: 600px) {
-  .nav-utility-inner { gap: 14px; padding: 6px 16px; }
-  .nav-utility a { font-size: 11px; }
-}
-
 .nav-inner {
   max-width: 1200px; margin: 0 auto;
   padding: 14px clamp(20px, 5vw, 48px);
   display: flex; align-items: center; justify-content: space-between;
 }
 .nav-logo {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center;
   text-decoration: none; color: var(--deep);
 }
 .nav-logo img { height: 44px; width: auto; }
-.nav-logo-text {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 22px; font-weight: 600;
-  color: var(--deep);
-  letter-spacing: .3px; line-height: 1;
-}
-.nav-logo-text em {
-  display: block; font-style: italic;
-  color: var(--sage); font-weight: 500;
-  font-size: 16px; letter-spacing: .8px;
-  margin-top: 2px;
-}
-@media (max-width: 720px) {
-  .nav-logo-text { display: none; }
-}
 
 .nav-links { display: flex; gap: 26px; align-items: center; }
 .nav-links a {
@@ -176,15 +138,16 @@ nav.scrolled { box-shadow: 0 1px 0 rgba(30,58,47,0.08), 0 8px 24px rgba(30,58,47
   background: rgba(61,107,90,0.05);
   transform: translateY(-2px);
 }
-.mega-item-photo {
-  width: 100%; aspect-ratio: 1 / 1;
-  border-radius: 10px; overflow: hidden;
-  margin-bottom: 10px;
-  background: var(--pale);
+.mega-item-icon {
+  width: 64px; height: 64px; margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream);
+  border-radius: 14px;
+  color: var(--sage);
+  transition: background .2s, color .2s;
 }
-.mega-item-photo img {
-  width: 100%; height: 100%; object-fit: cover; object-position: center 25%;
-}
+.mega-item-icon svg { width: 32px; height: 32px; display: block; }
+.mega-item:hover .mega-item-icon { background: var(--pale); color: var(--deep); }
 .mega-item-title {
   font-family: 'Cormorant Garamond', serif;
   font-size: 17px; font-weight: 600;
@@ -211,7 +174,19 @@ nav.scrolled { box-shadow: 0 1px 0 rgba(30,58,47,0.08), 0 8px 24px rgba(30,58,47
   font-size: 11px !important; transition: all .3s !important;
 }
 .nav-cta:hover { background: var(--deep) !important; }
-.nav-cta::after { display: none !important; }
+.nav-phone, .nav-existing {
+  display: inline-flex !important; align-items: center; gap: 6px;
+  padding: 9px 16px !important;
+  border: 1px solid var(--sage) !important;
+  border-radius: 100px !important;
+  color: var(--sage) !important;
+  font-size: 11px !important; font-weight: 500 !important;
+  letter-spacing: 1px !important; text-transform: uppercase !important;
+  transition: all .3s !important;
+}
+.nav-phone:hover, .nav-existing:hover { background: var(--sage); color: var(--white) !important; }
+.nav-phone .nav-phone-icon { font-size: 13px; line-height: 1; }
+.nav-cta::after, .nav-phone::after, .nav-existing::after { display: none !important; }
 
 /* Mobile hamburger */
 .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
@@ -485,7 +460,7 @@ section { padding: 110px 0; }
   border-radius: 20px; overflow: hidden;
   box-shadow: 0 10px 36px rgba(30,58,47,0.08);
 }
-.ps-visual img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4/3; }
+.ps-visual img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4/5; }
 .ps-eyebrow {
   font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
   font-weight: 500; margin-bottom: 10px; color: var(--sage);
@@ -666,24 +641,39 @@ section { padding: 110px 0; }
   text-transform: uppercase; letter-spacing: .5px;
 }
 /* Base rule so unstyled inputs (e.g. Netlify honeypot, future fields)
-   inherit the brand fonts and don't fall back to browser defaults. */
-input, select, textarea, button {
+   inherit the brand fonts and don't fall back to browser defaults.
+   Exclude radio/checkbox -- their visual size shouldn't scale with font. */
+input:not([type="radio"]):not([type="checkbox"]), select, textarea, button {
   font-family: 'Outfit', sans-serif;
   font-size: 16px;
 }
 
-.fg input, .fg select, .fg textarea {
+/* Text-like form controls (text, email, tel, select, textarea) get the
+   full-width pill treatment. Radios/checkboxes are explicitly excluded
+   here so they don't render as huge oversized full-width pills on mobile
+   (was previously inheriting the .fg input rule and overlapping their
+   labels). */
+.fg input:not([type="radio"]):not([type="checkbox"]),
+.fg select,
+.fg textarea {
   width: 100%; min-height: 48px; padding: 12px 16px;
   border: 1px solid rgba(61,107,90,0.15); border-radius: 10px;
   font-family: 'Outfit', sans-serif; font-size: 16px;
   background: var(--cream); color: var(--text);
   outline: none; transition: border-color .25s, box-shadow .25s;
 }
-.fg input:focus, .fg select:focus, .fg textarea:focus {
+.fg input:not([type="radio"]):not([type="checkbox"]):focus,
+.fg select:focus,
+.fg textarea:focus {
   border-color: var(--sage);
   box-shadow: 0 0 0 3px rgba(61,107,90,.15);
 }
 .fg textarea { resize: vertical; min-height: 96px; }
+.fg input[type="radio"], .fg input[type="checkbox"] {
+  width: 18px; height: 18px; min-height: 0; padding: 0;
+  flex-shrink: 0; margin: 0;
+  accent-color: var(--sage);
+}
 .fr { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 /* ============================================
