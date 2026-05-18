@@ -119,6 +119,18 @@ nav.scrolled { box-shadow: 0 1px 0 rgba(30,58,47,0.08), 0 8px 24px rgba(30,58,47
   font-size: 11px !important; transition: all .3s !important;
 }
 .nav-cta:hover { background: var(--deep) !important; }
+.nav-phone {
+  display: inline-flex !important; align-items: center; gap: 6px;
+  padding: 9px 16px !important;
+  border: 1px solid var(--sage) !important;
+  border-radius: 100px !important;
+  color: var(--sage) !important;
+  font-size: 11px !important; font-weight: 500 !important;
+  letter-spacing: 1px !important; text-transform: uppercase !important;
+  transition: all .3s !important;
+}
+.nav-phone:hover { background: var(--sage); color: var(--white) !important; }
+.nav-phone .nav-phone-icon { font-size: 13px; line-height: 1; }
 
 /* Mobile hamburger */
 .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
