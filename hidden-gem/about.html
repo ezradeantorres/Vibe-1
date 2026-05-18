@@ -58,15 +58,15 @@
 <div class="nav-links">
 <a data-nav="home" href="index.html">Home</a>
 <div class="nav-dropdown">
-<a data-nav="sara">Sara</a>
+<a data-nav="sara">Mental Health</a>
 <div class="dropdown-menu">
 <a data-nav="sara-psych" href="sara-psychiatric.html">Psychiatric Care &amp; Medication</a>
 <a data-nav="sara-equine" href="sara-equine.html">Equine-Assisted Therapy</a>
 </div>
 </div>
-<a data-nav="abbey" href="abbey.html">Abbey</a>
-<a data-nav="sam" href="sam-pediatric.html">Sam</a>
-<a data-nav="kiera" href="kiera-aesthetics.html">Kiera</a>
+<a data-nav="abbey" href="abbey.html">Primary Care</a>
+<a data-nav="sam" href="sam-pediatric.html">Pediatrics</a>
+<a data-nav="kiera" href="kiera-aesthetics.html">Aesthetics</a>
 <a data-nav="about" href="about.html">About</a>
 <a class="nav-cta" href="about.html#contact">Book Appointment</a>
 </div>
@@ -78,9 +78,9 @@
 <a href="index.html">Home</a>
 <a class="mobile-sub" href="sara-psychiatric.html">Psychiatric Care &amp; Medication</a>
 <a class="mobile-sub" href="sara-equine.html">Equine-Assisted Therapy</a>
-<a href="abbey.html">Abbey</a>
-<a href="sam-pediatric.html">Sam</a>
-<a href="kiera-aesthetics.html">Kiera</a>
+<a href="abbey.html">Primary Care</a>
+<a href="sam-pediatric.html">Pediatrics</a>
+<a href="kiera-aesthetics.html">Aesthetics</a>
 <a href="about.html">About</a>
 <a href="about.html#contact">Book Appointment</a>
 </div>
@@ -253,7 +253,9 @@
 <div class="book-form reveal" id="contact-form">
 <form action="/about?submitted=true#contact" data-netlify="true" method="POST" name="appointment" netlify-honeypot="bot-field">
 <input name="form-name" type="hidden" value="appointment"/>
-<input name="bot-field" style="display:none"/>
+<p style="display:none">
+<label>Don't fill this out if you're human: <input name="bot-field" tabindex="-1" autocomplete="off"/></label>
+</p>
 <input name="subject" type="hidden" value="New Appointment Request - Hidden Gem Healing"/>
 <div class="fr">
 <div class="fg"><label>First Name</label><input name="first_name" placeholder="First Name" required="" type="text"/></div>
@@ -297,7 +299,7 @@
 </form>
 </div>
 <div class="reveal" style="margin-top:36px;display:flex;justify-content:center;gap:36px;flex-wrap:wrap">
-<a href="tel:3852579373" style="color:var(--sage);font-size:15px;font-weight:500">📞 385-257-9373</a>
+<a href="tel:+13852579373" style="color:var(--sage);font-size:15px;font-weight:500">📞 385-257-9373</a>
 <a href="mailto:info@hiddengemhealingutah.com" style="color:var(--sage);font-size:15px;font-weight:500">✉️ info@hiddengemhealingutah.com</a>
 </div>
 <p class="reveal" style="margin-top:24px;font-size:13px;color:var(--text-light)">Existing patient? <a href="https://accounts.charmtracker.com/signin?hide_signup=true&amp;hide_secure=true&amp;hide_gsignup=true&amp;servicename=charmphr&amp;serviceurl=https%3A%2F%2Fphr2.charmtracker.com%2Fmain.do" rel="noopener" style="color:var(--sage);font-weight:500" target="_blank">Log in to the Client Portal</a></p>
@@ -309,7 +311,7 @@
 <h2>Committed, personalized, holistic care.</h2>
 <p>Holladay &amp; Sandy, Utah.</p>
 <div class="cta-actions">
-<a class="btn-white" href="tel:3852579373">Call Us</a>
+<a class="btn-white" href="tel:+13852579373">Call Us</a>
 </div>
 </div>
 </div>
@@ -338,7 +340,7 @@
 </div>
 <div class="footer-col">
 <h4>Contact</h4>
-<a href="tel:3852579373">385-257-9373</a>
+<a href="tel:+13852579373">385-257-9373</a>
 <a href="mailto:info@hiddengemhealingutah.com">Email</a>
 <a href="https://www.instagram.com/hghealingutah/" rel="noopener" target="_blank">Instagram</a>
 <a href="https://www.facebook.com/profile.php?id=61572086460289" rel="noopener" target="_blank">Facebook</a>
@@ -366,7 +368,7 @@
     + '<div class="form-success">'
     + '<div class="success-icon">✓</div>'
     + '<h3>Your request is on its way.</h3>'
-    + '<p>We’ll reach out within one business day to confirm. If you don’t hear back by then, please call <a href="tel:3852579373" style="color:var(--sage);font-weight:500">385-257-9373</a> or email <a href="mailto:info@hiddengemhealingutah.com" style="color:var(--sage);font-weight:500">info@hiddengemhealingutah.com</a>.</p>'
+    + '<p>We’ll reach out within one business day to confirm. If you don’t hear back by then, please call <a href="tel:+13852579373" style="color:var(--sage);font-weight:500">385-257-9373</a> or email <a href="mailto:info@hiddengemhealingutah.com" style="color:var(--sage);font-weight:500">info@hiddengemhealingutah.com</a>.</p>'
     + '</div>';
   if (window.history && window.history.replaceState) {
     window.history.replaceState({}, document.title, window.location.pathname + '#contact');
