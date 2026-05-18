@@ -16,7 +16,8 @@
   --gold-light: #D4B06A;
   --gold-text: #8C6B33;    /* AA-passing dark tan for .section-label (the lighter --gold fails AA on cream) */
   --text: #2A2A2A;
-  --text-light: #6B6B6B;
+  --text-prose: #4A4A4A;    /* AAA-passing on cream; for paragraph copy */
+  --text-light: #6B6B6B;    /* for secondary/tertiary UI text */
   --white: #FFFFFF;
   --earth: #6B5B3E;
   --earth-light: #F5F0E6;
@@ -43,7 +44,7 @@ img { max-width: 100%; display: block; }
 a { text-decoration: none; }
 
 /* --- Container --- */
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.container { max-width: 1200px; margin: 0 auto; padding-inline: clamp(20px, 5vw, 48px); }
 
 /* --- Navigation --- */
 nav {
@@ -53,7 +54,7 @@ nav {
   border-bottom: 1px solid rgba(61,107,90,0.08);
   transition: all .4s;
 }
-nav.scrolled { box-shadow: 0 2px 40px rgba(30,58,47,0.08); }
+nav.scrolled { box-shadow: 0 1px 0 rgba(30,58,47,0.08), 0 8px 24px rgba(30,58,47,0.04); }
 .nav-inner {
   max-width: 1200px; margin: 0 auto; padding: 14px 24px;
   display: flex; align-items: center; justify-content: space-between;
@@ -75,7 +76,7 @@ nav.scrolled { box-shadow: 0 2px 40px rgba(30,58,47,0.08); }
 .nav-links { display: flex; gap: 24px; align-items: center; }
 .nav-links a {
   text-decoration: none; color: var(--text-light);
-  font-size: 13px; font-weight: 400;
+  font-size: 13px; font-weight: 500;
   letter-spacing: .5px; text-transform: uppercase;
   transition: color .3s; white-space: nowrap;
 }
@@ -154,6 +155,11 @@ nav.scrolled { box-shadow: 0 2px 40px rgba(30,58,47,0.08); }
   background: var(--deep); transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(30,58,47,0.2);
 }
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-white:focus-visible {
+  outline: 2px solid var(--gold); outline-offset: 3px;
+}
 .btn-secondary {
   background: transparent; color: var(--sage);
   padding: 16px 36px; border-radius: 100px;
@@ -182,8 +188,8 @@ section { padding: 110px 0; }
   font-size: clamp(30px, 4vw, 50px); color: var(--deep); margin-bottom: 20px;
 }
 .section-desc {
-  font-size: 16px; color: var(--text-light);
-  max-width: 600px; line-height: 1.8;
+  font-size: 16px; color: var(--text-prose);
+  max-width: 65ch; line-height: 1.8;
 }
 
 /* --- Tags & Badges --- */
@@ -247,15 +253,23 @@ section { padding: 110px 0; }
 .hero h1 { font-size: clamp(36px, 8vw, 60px); line-height: 1.05; color: var(--deep); margin-bottom: 24px; }
 .hero h1 em { font-style: italic; color: var(--sage); }
 .hero-sub {
-  font-size: 17px; color: var(--text-light);
+  font-size: 17px; color: var(--text-prose);
   max-width: 460px; margin-bottom: 36px; line-height: 1.8;
 }
 .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
 .hero-img {
   width: 100%; max-width: 580px;
-  border-radius: 32px;
+  border-radius: 16px;
   overflow: hidden;
+  position: relative;
   box-shadow: 0 30px 80px rgba(30,58,47,0.15);
+}
+.hero-img::after {
+  /* Soft tan-tinted top overlay that blends the photo into the cream */
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 30%;
+  background: linear-gradient(180deg, rgba(184,146,74,0.10), transparent);
+  pointer-events: none;
 }
 .hero-img img {
   width: 100%; height: auto;
@@ -375,7 +389,7 @@ section { padding: 110px 0; }
 }
 .ps-title { font-size: clamp(26px, 3vw, 38px); color: var(--deep); margin-bottom: 14px; }
 .ps-body {
-  font-size: 15px; color: var(--text-light); line-height: 1.8; margin-bottom: 20px;
+  font-size: 15px; color: var(--text-prose); line-height: 1.8; margin-bottom: 20px;
 }
 .ps-list { list-style: none; margin-bottom: 24px; }
 .ps-list li {
@@ -478,8 +492,9 @@ section { padding: 110px 0; }
    ============================================ */
 .pricing-flex { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 760px; margin: 48px auto 0; }
 .price-card {
-  background: var(--white); border-radius: 20px; padding: 36px 28px;
+  background: var(--white); border-radius: 16px; padding: 32px 28px;
   border: 1px solid rgba(61,107,90,0.08);
+  box-shadow: 0 1px 2px rgba(30,58,47,0.06), 0 8px 24px rgba(30,58,47,0.04);
 }
 .price-card h3 {
   font-family: 'Cormorant Garamond', serif; font-size: 22px;
@@ -490,7 +505,7 @@ section { padding: 110px 0; }
   display: flex; justify-content: space-between;
   padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 13px;
 }
-.price-item span:last-child { font-weight: 500; color: var(--deep); }
+.price-item span:last-child { font-weight: 500; color: var(--deep); font-variant-numeric: tabular-nums; }
 .price-note {
   margin-top: 16px; font-size: 12px;
   color: var(--text-light); text-align: center;
@@ -630,7 +645,7 @@ input, select, textarea, button {
 /* ============================================
    FOOTER
    ============================================ */
-footer { background: var(--deep); color: rgba(255,255,255,0.5); padding: 50px 0 24px; }
+footer { background: var(--deep); color: rgba(255,255,255,0.7); padding: 50px 0 24px; }
 .footer-grid {
   display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 40px; margin-bottom: 40px;
@@ -642,7 +657,7 @@ footer { background: var(--deep); color: rgba(255,255,255,0.5); padding: 50px 0 
   font-weight: 500; margin-bottom: 16px;
 }
 .footer-col a {
-  display: block; color: rgba(255,255,255,0.5);
+  display: block; color: rgba(255,255,255,0.7);
   font-size: 13px; margin-bottom: 10px; transition: color .3s;
 }
 .footer-col a:hover { color: var(--gold-light); }
@@ -652,7 +667,7 @@ footer { background: var(--deep); color: rgba(255,255,255,0.5); padding: 50px 0 
   justify-content: space-between; align-items: center;
   font-size: 12px; flex-wrap: wrap; gap: 12px;
 }
-.footer-bottom a { color: rgba(255,255,255,0.4); transition: color .3s; }
+.footer-bottom a { color: rgba(255,255,255,0.65); transition: color .3s; }
 .footer-bottom a:hover { color: var(--gold-light); }
 .gfe {
   text-align: center; margin-top: 16px; font-size: 11px;
@@ -716,6 +731,10 @@ footer { background: var(--deep); color: rgba(255,255,255,0.5); padding: 50px 0 
    SCROLL REVEAL ANIMATIONS
    ============================================ */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.visible { opacity: 1; transform: none; transition: none; }
+  .btn-primary:hover, .btn-white:hover { transform: none; }
+}
 .reveal.visible { opacity: 1; transform: translateY(0); }
 .d1 { transition-delay: .1s; }
 .d2 { transition-delay: .2s; }
