@@ -45,6 +45,7 @@ const EDITABLE_SELECTOR = [
 const EXT_EDITABLE_SELECTOR = [
   '.section-label',
   '.persona-tag',
+  '.ps-eyebrow',
   '.faq-q', '.faq-a',
   'footer h4', 'footer p', 'footer a',
   'nav a', '.nav-links a'

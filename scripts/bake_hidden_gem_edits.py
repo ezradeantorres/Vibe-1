@@ -49,6 +49,16 @@ EDITABLE_SELECTORS = (
     "span.cred, div.hero-badge"
 )
 
+# Mirror EXT_EDITABLE_SELECTOR in editor.js. Keys land in `${page}:ext:N`
+# and are indexed only over elements not already matched by the legacy
+# selector — matching collectExtraEditables() behavior in JS.
+EXT_EDITABLE_SELECTORS = (
+    ".section-label, .persona-tag, .ps-eyebrow, "
+    ".faq-q, .faq-a, "
+    "footer h4, footer p, footer a, "
+    "nav a, .nav-links a"
+)
+
 
 def get_page_key(soup):
     body = soup.find("body")
@@ -78,6 +88,17 @@ def is_skipped_img(img):
 
 def collect_text_nodes(soup):
     return [el for el in soup.select(EDITABLE_SELECTORS) if not is_skipped_text(el)]
+
+
+def collect_ext_text_nodes(soup, legacy_nodes):
+    # Mirrors JS collectExtraEditables(): include ext-selector elements,
+    # skipping any the legacy selector already matched (they keep their
+    # legacy ${page}:N key, so the :ext: counter doesn't advance).
+    legacy_ids = {id(n) for n in legacy_nodes}
+    return [
+        el for el in soup.select(EXT_EDITABLE_SELECTORS)
+        if not is_skipped_text(el) and id(el) not in legacy_ids
+    ]
 
 
 def collect_img_nodes(soup):
@@ -119,8 +140,9 @@ def download_image(override_value, key):
 
 def apply_overrides(soup, overrides):
     text_nodes = collect_text_nodes(soup)
+    ext_nodes = collect_ext_text_nodes(soup, text_nodes)
     img_nodes = collect_img_nodes(soup)
-    text_count = img_count = 0
+    text_count = ext_count = img_count = 0
 
     for key, val in overrides.items():
         parts = key.split(":")
@@ -145,8 +167,20 @@ def apply_overrides(soup, overrides):
             continue
 
         if "ext" in parts:
-            # Editor's :ext: namespace stays in the blob, applied at runtime.
-            print(f"  - Skipping ext-namespace key (runtime-only): {key}")
+            try:
+                idx = int(parts[-1])
+            except ValueError:
+                print(f"  ! Malformed ext key, skipping: {key}")
+                continue
+            if idx >= len(ext_nodes):
+                print(f"  ! ext idx {idx} out of range ({len(ext_nodes)} nodes) for {key}")
+                continue
+            target = ext_nodes[idx]
+            target.clear()
+            fragment = BeautifulSoup(val, "html.parser")
+            for child in list(fragment.contents):
+                target.append(child)
+            ext_count += 1
             continue
 
         try:
@@ -165,14 +199,14 @@ def apply_overrides(soup, overrides):
             target.append(child)
         text_count += 1
 
-    return text_count, img_count
+    return text_count, ext_count, img_count
 
 
 def main():
     if not HIDDEN_GEM.is_dir():
         sys.exit(f"hidden-gem/ not found at {HIDDEN_GEM}")
 
-    grand_text = grand_img = 0
+    grand_text = grand_ext = grand_img = 0
     for filename in PAGE_FILES:
         path = HIDDEN_GEM / filename
         if not path.is_file():
@@ -198,14 +232,15 @@ def main():
             continue
 
         print(f"  {len(overrides)} override(s) for page '{page_key}'")
-        text_count, img_count = apply_overrides(soup, overrides)
+        text_count, ext_count, img_count = apply_overrides(soup, overrides)
 
         path.write_text(str(soup), encoding="utf-8")
-        print(f"  Wrote {filename}: {text_count} text, {img_count} image baked")
+        print(f"  Wrote {filename}: {text_count} text, {ext_count} ext, {img_count} image baked")
         grand_text += text_count
+        grand_ext += ext_count
         grand_img += img_count
 
-    print(f"\nDone. {grand_text} text + {grand_img} image override(s) baked.")
+    print(f"\nDone. {grand_text} text + {grand_ext} ext + {grand_img} image override(s) baked.")
     print("Inspect with `git diff hidden-gem/` before committing.")
 
 
