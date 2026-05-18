@@ -250,7 +250,7 @@
 <p class="section-desc" style="margin:0 auto 36px">Select your provider, request a time, and Elena will call to confirm.</p>
 </div>
 <div class="book-form reveal" id="contact-form">
-<form action="/thanks.html" data-netlify="true" method="POST" name="appointment" netlify-honeypot="bot-field">
+<form action="/about.html" data-netlify="true" method="POST" name="appointment" netlify-honeypot="bot-field">
 <input name="form-name" type="hidden" value="appointment"/>
 <input name="bot-field" style="display:none"/>
 <input name="subject" type="hidden" value="New Appointment Request - Hidden Gem Healing"/>
@@ -356,5 +356,40 @@
 <!-- END SHARED: FOOTER -->
 <script src="js/main.js"></script>
 <script src="js/editor.js" type="module"></script>
+<script>
+(function(){
+  var form = document.querySelector('form[name="appointment"]');
+  if (!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    var body = new URLSearchParams(new FormData(form)).toString();
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body
+    }).then(function(res){
+      if (!res.ok) throw new Error('submit failed: ' + res.status);
+      var wrap = document.getElementById('contact-form');
+      if (!wrap) return;
+      wrap.innerHTML = ''
+        + '<div class="form-success">'
+        + '<div class="success-icon">✓</div>'
+        + '<h3>Your request is on its way.</h3>'
+        + '<p>We’ll reach out within one business day to confirm. If you don’t hear back by then, please call <a href="tel:3852579373" style="color:var(--sage);font-weight:500">385-257-9373</a>.</p>'
+        + '</div>';
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }).catch(function(err){
+      console.error('appointment submit failed:', err);
+      if (btn) { btn.disabled = false; btn.textContent = 'Request Appointment →'; }
+      var note = document.createElement('p');
+      note.style.cssText = 'color:#b94a4a;margin-top:12px;font-size:14px';
+      note.textContent = 'Something went wrong. Please call 385-257-9373 or email info@hiddengemhealingutah.com.';
+      form.appendChild(note);
+    });
+  });
+})();
+</script>
 </body>
 </html>
