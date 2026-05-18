@@ -237,21 +237,27 @@ section { padding: 110px 0; }
   display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
   align-items: center; padding: 60px 0; position: relative; z-index: 2;
 }
-.hero-badge {
+/* Reusable status chip. Apply with .status-chip on any provider page
+   hero or section. Variants: .status-chip--gold (default sage),
+   .status-chip--quiet (no pulse dot, neutral coloring). */
+.status-chip, .hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
   background: rgba(61,107,90,0.08); padding: 8px 20px;
   border-radius: 100px; font-size: 12px; letter-spacing: 1.5px;
   text-transform: uppercase; color: var(--sage); font-weight: 500;
   margin-bottom: 24px;
 }
-.hero-badge::before {
+.status-chip::before, .hero-badge::before {
   content: ''; width: 8px; height: 8px;
   background: var(--gold); border-radius: 50%;
   animation: pulse 2s infinite;
 }
+.status-chip--quiet::before { animation: none; opacity: 0.6; }
+.status-chip--earth { color: var(--earth); background: rgba(107,91,62,0.08); }
+.status-chip--earth::before { background: var(--earth); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
 .hero h1 { font-size: clamp(36px, 8vw, 60px); line-height: 1.05; color: var(--deep); margin-bottom: 24px; }
-.hero h1 em { font-style: italic; color: var(--sage); }
+.hero h1 em, .ps-title em, .section-title em { font-style: italic; color: var(--sage); }
 .hero-sub {
   font-size: 17px; color: var(--text-prose);
   max-width: 460px; margin-bottom: 36px; line-height: 1.8;
@@ -305,7 +311,11 @@ section { padding: 110px 0; }
   box-shadow: 0 20px 60px rgba(30,58,47,0.12);
 }
 .split-photo { width: 100%; height: 200px; overflow: hidden; }
-.split-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+.split-photo img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center 25%;
+  transition: transform .5s ease;
+}
+.split-card:hover .split-photo img { transform: scale(1.04); }
 .split-body { padding: 36px; }
 .split-tag {
   font-size: 12px; letter-spacing: 1.5px;
@@ -495,6 +505,21 @@ section { padding: 110px 0; }
   background: var(--white); border-radius: 16px; padding: 32px 28px;
   border: 1px solid rgba(61,107,90,0.08);
   box-shadow: 0 1px 2px rgba(30,58,47,0.06), 0 8px 24px rgba(30,58,47,0.04);
+  position: relative;
+}
+/* Featured pricing variant. Apply with .price-card.is-featured to mark
+   the most-booked service; renders a sage-tinted border + a tiny
+   "MOST BOOKED" chip in the top-right corner. */
+.price-card.is-featured {
+  border: 1.5px solid rgba(61,107,90,0.30);
+  box-shadow: 0 2px 4px rgba(30,58,47,0.08), 0 16px 36px rgba(30,58,47,0.06);
+}
+.price-card.is-featured::before {
+  content: 'Most booked'; position: absolute; top: -10px; right: 20px;
+  background: var(--sage); color: var(--white);
+  font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 100px;
+  box-shadow: 0 2px 6px rgba(30,58,47,0.18);
 }
 .price-card h3 {
   font-family: 'Cormorant Garamond', serif; font-size: 22px;
@@ -736,10 +761,10 @@ footer { background: var(--deep); color: rgba(255,255,255,0.7); padding: 50px 0 
   .btn-primary:hover, .btn-white:hover { transform: none; }
 }
 .reveal.visible { opacity: 1; transform: translateY(0); }
-.d1 { transition-delay: .1s; }
-.d2 { transition-delay: .2s; }
-.d3 { transition-delay: .25s; }
-.d4 { transition-delay: .3s; }
+.d1 { transition-delay: .08s; }
+.d2 { transition-delay: .16s; }
+.d3 { transition-delay: .24s; }
+.d4 { transition-delay: .32s; }
 
 /* ============================================
    RESPONSIVE — MOBILE (<=968px)
