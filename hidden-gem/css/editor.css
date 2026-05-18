@@ -6,34 +6,25 @@
   box-sizing: border-box;
 }
 
-#hg-edit-btn {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 2147483000;
-  background: #2d5a4a;
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  padding: 11px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+/* ----- Footer "edit" link --------------------------------------------- */
+/* Discreet text link injected into .footer-bottom on every page. Picks
+   up the surrounding footer-bottom anchor color so it blends in. */
+.hg-edit-footer-link {
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  transition: color 0.3s;
+  font-size: 12px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
-#hg-edit-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+.hg-edit-footer-link:hover {
+  color: var(--gold-light, #f6b100);
 }
-#hg-edit-btn:disabled {
+.hg-edit-footer-link.hg-disabled {
+  pointer-events: none;
   opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* ----- "Someone is editing" banner ------------------------------------ */
 #hg-lock-banner {
   position: fixed;
   top: 0;
@@ -50,6 +41,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* ----- Bottom save bar (visible only in edit mode) -------------------- */
 #hg-save-bar {
   position: fixed;
   bottom: 0;
@@ -89,7 +81,7 @@
 }
 #hg-cancel-btn:hover { background: rgba(255, 255, 255, 0.1); }
 
-/* Highlight editable blocks while in edit mode */
+/* ----- Editable-element highlights ------------------------------------ */
 .hg-editable {
   outline: 2px dashed #2d5a4a !important;
   outline-offset: 4px;
@@ -117,8 +109,138 @@
   filter: brightness(0.85) saturate(1.1);
 }
 
-/* Nudge the floating Edit button below a visible lock banner */
-#hg-lock-banner[style*="display: block"] ~ #hg-edit-btn,
-#hg-lock-banner:not([style*="display: none"]) ~ #hg-edit-btn {
-  top: 56px;
+/* ----- OTP sign-in modal ---------------------------------------------- */
+#hg-otp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483100;
+  font-family: 'Outfit', system-ui, -apple-system, Segoe UI, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#hg-otp-modal .hg-otp-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 20, 16, 0.55);
+  backdrop-filter: blur(2px);
+}
+#hg-otp-modal .hg-otp-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  color: #1a1a1a;
+  border-radius: 12px;
+  padding: 28px 28px 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  animation: hg-otp-pop 0.18s ease-out;
+}
+@keyframes hg-otp-pop {
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+#hg-otp-modal h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d5a4a;
+}
+#hg-otp-modal .hg-otp-msg {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #444;
+}
+#hg-otp-modal .hg-otp-msg[data-kind="ok"] { color: #2d5a4a; }
+#hg-otp-modal .hg-otp-msg[data-kind="err"] { color: #b00020; }
+
+#hg-otp-modal label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+  margin-bottom: 6px;
+}
+#hg-otp-modal input {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 15px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #1a1a1a;
+  font-family: inherit;
+  margin-bottom: 16px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+#hg-otp-modal input:focus {
+  outline: none;
+  border-color: #2d5a4a;
+  background: #fff;
+}
+#hg-otp-modal input#hg-otp-code {
+  font-family: 'Menlo', 'Courier New', monospace;
+  letter-spacing: 0.3em;
+  text-align: center;
+  font-size: 18px;
+}
+
+#hg-otp-modal .hg-otp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+#hg-otp-modal .hg-otp-actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+#hg-otp-modal #hg-otp-send,
+#hg-otp-modal #hg-otp-verify {
+  background: #2d5a4a;
+  color: #fff;
+}
+#hg-otp-modal #hg-otp-send:hover,
+#hg-otp-modal #hg-otp-verify:hover { opacity: 0.92; }
+#hg-otp-modal #hg-otp-send:disabled,
+#hg-otp-modal #hg-otp-verify:disabled { opacity: 0.6; cursor: progress; }
+#hg-otp-modal #hg-otp-cancel,
+#hg-otp-modal #hg-otp-back {
+  background: transparent;
+  color: #555;
+}
+#hg-otp-modal #hg-otp-cancel:hover,
+#hg-otp-modal #hg-otp-back:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+#hg-otp-modal .hg-otp-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+#hg-otp-modal .hg-otp-close:hover { background: rgba(0, 0, 0, 0.05); color: #222; }
+
+#hg-otp-modal .hg-otp-foot {
+  margin: 16px 0 0;
+  font-size: 11px;
+  color: #888;
+  text-align: center;
 }

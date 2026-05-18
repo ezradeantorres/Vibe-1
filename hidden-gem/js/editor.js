@@ -2,17 +2,25 @@
 //  HIDDEN GEM HEALING — IN-PAGE EDITOR (Netlify Blobs backend)
 // ============================================================
 //  Loads saved text overrides from a Netlify Function on every
-//  page view, and lets any visitor edit any text block in place
-//  with a cross-tab "someone is editing" lock.
+//  page view (public read), and gates editing behind an email OTP
+//  served by /.netlify/functions/otp. A successful verify returns
+//  a 32-hex token which the editor stashes in sessionStorage and
+//  attaches as `x-hg-token` on every write call.
 // ============================================================
 
 const CONTENT_URL = '/.netlify/functions/content';
 const LOCK_URL = '/.netlify/functions/lock';
 const IMAGE_URL = '/.netlify/functions/image';
+const OTP_URL = '/.netlify/functions/otp';
 
 const LOCK_TIMEOUT_MS = 10 * 60 * 1000;   // must match lock.mjs
 const LOCK_HEARTBEAT_MS = 30 * 1000;
 const LOCK_POLL_MS = 5 * 1000;            // how often we poll the lock status
+
+// Token lives in sessionStorage so it dies when the tab closes; it is
+// shared across pages of the site in the same tab so the editor can
+// navigate between index/about/abbey/etc. without re-OTP-ing.
+const TOKEN_KEY = 'hg-edit-token';
 
 // ---- Page key (one blob per page) -----------------------------------------
 const pageKey =
@@ -132,6 +140,38 @@ async function loadOverrides() {
   }
 }
 
+// ---- Token helpers --------------------------------------------------------
+function getToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
+}
+function setToken(t) {
+  try { sessionStorage.setItem(TOKEN_KEY, t); } catch {}
+}
+function clearToken() {
+  try { sessionStorage.removeItem(TOKEN_KEY); } catch {}
+}
+function authHeaders(base = {}) {
+  const t = getToken();
+  return t ? { ...base, 'x-hg-token': t } : { ...base };
+}
+
+// Common handler when any write returns 401: token has expired or been
+// invalidated. Drop it, force-exit edit mode if we were editing, and tell
+// the user. The next click on "edit" will re-prompt for email + code.
+function handleAuthExpired(context) {
+  clearToken();
+  if (isEditing) {
+    // Try to release the lock; we no longer have a token so this will 401,
+    // but the lock will time out on its own in <= 10 minutes either way.
+    try { exitEditMode(); } catch {}
+  }
+  alert(
+    'Your editor sign-in has expired. ' +
+    'Click "edit" in the footer to sign in again.\n\n' +
+    (context ? `(${context})` : '')
+  );
+}
+
 // ---- Lock state -----------------------------------------------------------
 const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
 let heartbeatTimer = null;
@@ -142,9 +182,15 @@ async function lockRequest(action, extra = {}) {
   try {
     const res = await fetch(LOCK_URL, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: authHeaders({ 'content-type': 'application/json' }),
       body: JSON.stringify({ action, sessionId, userName: currentUserName, ...extra })
     });
+    if (res.status === 401) {
+      // Don't fire the global handler from background heartbeats — that
+      // would spam the alert. Caller decides what to do with { ok: false,
+      // unauthorized: true }.
+      return { ok: false, unauthorized: true };
+    }
     if (!res.ok) return { ok: false };
     return await res.json();
   } catch {
@@ -165,7 +211,15 @@ function releaseLock() {
 
 function startHeartbeat() {
   stopHeartbeat();
-  heartbeatTimer = setInterval(refreshLock, LOCK_HEARTBEAT_MS);
+  heartbeatTimer = setInterval(async () => {
+    const r = await refreshLock();
+    // Heartbeat is the canary that catches token expiry while idle in
+    // edit mode. If we hit a 401, surface it once and bail out.
+    if (r && r.unauthorized) {
+      stopHeartbeat();
+      handleAuthExpired('Lock heartbeat rejected — token expired.');
+    }
+  }, LOCK_HEARTBEAT_MS);
 }
 function stopHeartbeat() {
   if (heartbeatTimer) clearInterval(heartbeatTimer);
@@ -183,16 +237,22 @@ async function pollLockStatus() {
     return;
   }
   const banner = document.getElementById('hg-lock-banner');
-  const btn = document.getElementById('hg-edit-btn');
-  if (!banner || !btn) return;
+  const link = document.querySelector('.hg-edit-footer-link');
+  if (!banner) return;
   const heldByOther = data.active && data.sessionId !== sessionId;
   if (heldByOther) {
-    banner.textContent = `✏️  ${data.userName || 'Someone'} is editing the site right now…`;
+    banner.textContent = `${data.userName || 'Someone'} is editing the site right now…`;
     banner.style.display = 'block';
-    if (!isEditing) btn.disabled = true;
+    if (link && !isEditing) {
+      link.classList.add('hg-disabled');
+      link.title = `${data.userName || 'Someone'} is currently editing.`;
+    }
   } else {
     banner.style.display = 'none';
-    if (!isEditing) btn.disabled = false;
+    if (link && !isEditing) {
+      link.classList.remove('hg-disabled');
+      link.title = 'Sign in to edit this site';
+    }
   }
 }
 
@@ -221,9 +281,12 @@ function enterEditMode(userName) {
   });
   document.addEventListener('click', blockLinkNav, false);
   isEditing = true;
-  document.getElementById('hg-save-bar').classList.add('active');
-  document.getElementById('hg-save-bar-name').textContent = userName;
-  document.getElementById('hg-edit-btn').style.display = 'none';
+  const saveBar = document.getElementById('hg-save-bar');
+  if (saveBar) saveBar.classList.add('active');
+  const nameEl = document.getElementById('hg-save-bar-name');
+  if (nameEl) nameEl.textContent = userName;
+  const link = document.querySelector('.hg-edit-footer-link');
+  if (link) link.style.visibility = 'hidden';
   startHeartbeat();
 }
 
@@ -239,8 +302,10 @@ function exitEditMode() {
   });
   document.removeEventListener('click', blockLinkNav, false);
   isEditing = false;
-  document.getElementById('hg-save-bar').classList.remove('active');
-  document.getElementById('hg-edit-btn').style.display = '';
+  const saveBar = document.getElementById('hg-save-bar');
+  if (saveBar) saveBar.classList.remove('active');
+  const link = document.querySelector('.hg-edit-footer-link');
+  if (link) link.style.visibility = '';
   stopHeartbeat();
 }
 
@@ -279,7 +344,15 @@ async function uploadImage(img, file) {
     form.append('page', pageKey);
     form.append('editKey', img.dataset.editImgKey);
     form.append('file', file);
-    const res = await fetch(IMAGE_URL, { method: 'POST', body: form });
+    const res = await fetch(IMAGE_URL, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: form
+    });
+    if (res.status === 401) {
+      handleAuthExpired('Image upload was rejected — token expired.');
+      return;
+    }
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
       throw new Error(`HTTP ${res.status} ${txt}`);
@@ -303,15 +376,20 @@ async function saveChanges() {
     if (newVal !== originalContent[key]) updates[key] = newVal;
   });
   const saveBtn = document.getElementById('hg-save-btn');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving…';
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
   try {
     if (Object.keys(updates).length > 0) {
       const res = await fetch(CONTENT_URL, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: authHeaders({ 'content-type': 'application/json' }),
         body: JSON.stringify({ page: pageKey, updates })
       });
+      if (res.status === 401) {
+        handleAuthExpired(
+          'Your changes were NOT saved. Sign in again and re-apply them.'
+        );
+        return;
+      }
       if (!res.ok) {
         const txt = await res.text().catch(() => '');
         throw new Error(`HTTP ${res.status} ${txt}`);
@@ -322,8 +400,7 @@ async function saveChanges() {
   } catch (err) {
     alert('Save failed: ' + (err && err.message ? err.message : err));
   } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save';
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
   }
 }
 
@@ -336,16 +413,234 @@ function cancelEdit() {
   exitEditMode();
 }
 
-// ---- Edit button click ----------------------------------------------------
-async function onEditClick() {
-  const savedName = localStorage.getItem('hgEditorName') || '';
-  const name = window.prompt('Your name (so others know who is editing):', savedName);
-  if (!name) return;
-  localStorage.setItem('hgEditorName', name);
+// ---- OTP modal flow -------------------------------------------------------
+// One small inline modal handles both steps:
+//   1. ask for email, POST {action:'request', email}
+//   2. ask for the 6-digit code, POST {action:'verify', email, code}
+// On success we stash the token in sessionStorage and continue into
+// tryAcquireLock + enterEditMode.
+
+function buildOtpModal() {
+  // Reuse if already mounted (e.g. token expired and we're re-opening).
+  let modal = document.getElementById('hg-otp-modal');
+  if (modal) return modal;
+
+  modal = document.createElement('div');
+  modal.id = 'hg-otp-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'hg-otp-title');
+  modal.innerHTML = `
+    <div class="hg-otp-backdrop" data-hg-close="1"></div>
+    <div class="hg-otp-card">
+      <button type="button" class="hg-otp-close" data-hg-close="1" aria-label="Close">×</button>
+      <h3 id="hg-otp-title">Editor sign-in</h3>
+      <p class="hg-otp-msg" id="hg-otp-msg">Enter your email to receive a sign-in code.</p>
+
+      <div class="hg-otp-step" data-step="email">
+        <label for="hg-otp-email">Email</label>
+        <input type="email" id="hg-otp-email" autocomplete="email" placeholder="you@example.com" />
+        <div class="hg-otp-actions">
+          <button type="button" id="hg-otp-cancel">Cancel</button>
+          <button type="button" id="hg-otp-send">Send code</button>
+        </div>
+      </div>
+
+      <div class="hg-otp-step" data-step="code" hidden>
+        <label for="hg-otp-code">6-digit code</label>
+        <input type="text" id="hg-otp-code" inputmode="numeric" autocomplete="one-time-code"
+               pattern="[0-9]{6}" maxlength="6" placeholder="123456" />
+        <div class="hg-otp-actions">
+          <button type="button" id="hg-otp-back">Back</button>
+          <button type="button" id="hg-otp-verify">Verify &amp; edit</button>
+        </div>
+      </div>
+
+      <p class="hg-otp-foot">Editing is restricted to authorized accounts.</p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function showStep(modal, step) {
+  modal.querySelectorAll('.hg-otp-step').forEach(s => {
+    s.hidden = s.dataset.step !== step;
+  });
+  const focus = step === 'email'
+    ? modal.querySelector('#hg-otp-email')
+    : modal.querySelector('#hg-otp-code');
+  if (focus) setTimeout(() => focus.focus(), 0);
+}
+
+function setOtpMsg(modal, text, kind) {
+  const m = modal.querySelector('#hg-otp-msg');
+  if (!m) return;
+  m.textContent = text;
+  m.dataset.kind = kind || '';
+}
+
+function closeOtpModal() {
+  const modal = document.getElementById('hg-otp-modal');
+  if (modal) modal.remove();
+}
+
+// Returns { email, name } on success, null if the user closed the modal.
+function openOtpModal() {
+  return new Promise(resolve => {
+    const modal = buildOtpModal();
+    modal.classList.add('open');
+    showStep(modal, 'email');
+
+    const emailInput = modal.querySelector('#hg-otp-email');
+    const codeInput = modal.querySelector('#hg-otp-code');
+    const sendBtn = modal.querySelector('#hg-otp-send');
+    const verifyBtn = modal.querySelector('#hg-otp-verify');
+    const cancelBtn = modal.querySelector('#hg-otp-cancel');
+    const backBtn = modal.querySelector('#hg-otp-back');
+
+    const savedEmail = (() => {
+      try { return localStorage.getItem('hgEditorEmail') || ''; } catch { return ''; }
+    })();
+    if (savedEmail) emailInput.value = savedEmail;
+
+    let currentEmail = '';
+
+    const close = (result) => {
+      modal.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onEsc);
+      closeOtpModal();
+      resolve(result);
+    };
+    const onBackdrop = (e) => {
+      if (e.target && e.target.dataset && e.target.dataset.hgClose === '1') close(null);
+    };
+    const onEsc = (e) => { if (e.key === 'Escape') close(null); };
+    modal.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onEsc);
+
+    cancelBtn.addEventListener('click', () => close(null));
+
+    sendBtn.addEventListener('click', async () => {
+      const email = (emailInput.value || '').trim().toLowerCase();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setOtpMsg(modal, 'Please enter a valid email.', 'err');
+        return;
+      }
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending…';
+      setOtpMsg(modal, 'Sending code…', '');
+      try {
+        const res = await fetch(OTP_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action: 'request', email })
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          throw new Error(`HTTP ${res.status} ${txt}`);
+        }
+        currentEmail = email;
+        try { localStorage.setItem('hgEditorEmail', email); } catch {}
+        setOtpMsg(modal,
+          'If your address is authorized, a 6-digit code has been emailed to you. It expires in 10 minutes.',
+          'ok'
+        );
+        showStep(modal, 'code');
+      } catch (err) {
+        setOtpMsg(modal,
+          'Could not send code: ' + (err && err.message ? err.message : err),
+          'err'
+        );
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send code';
+      }
+    });
+
+    backBtn.addEventListener('click', () => {
+      setOtpMsg(modal, 'Enter your email to receive a sign-in code.', '');
+      showStep(modal, 'email');
+    });
+
+    verifyBtn.addEventListener('click', async () => {
+      const code = (codeInput.value || '').trim();
+      if (!/^\d{6}$/.test(code)) {
+        setOtpMsg(modal, 'Enter the 6-digit code from your email.', 'err');
+        return;
+      }
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = 'Verifying…';
+      try {
+        const res = await fetch(OTP_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action: 'verify', email: currentEmail, code })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data && data.ok && data.token) {
+          setToken(data.token);
+          // Derive a display name from the email so the lock banner has
+          // something nicer than the full address to show others.
+          const name = currentEmail.split('@')[0] || 'Editor';
+          close({ email: currentEmail, name });
+        } else if (data && data.expired) {
+          setOtpMsg(modal,
+            'That code has expired. Click "Back" and request a new one.',
+            'err'
+          );
+        } else {
+          setOtpMsg(modal,
+            'Incorrect or expired code. Double-check the email and try again.',
+            'err'
+          );
+        }
+      } catch (err) {
+        setOtpMsg(modal,
+          'Verification failed: ' + (err && err.message ? err.message : err),
+          'err'
+        );
+      } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'Verify & edit';
+      }
+    });
+
+    // Enter-key shortcuts
+    emailInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); }
+    });
+    codeInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); verifyBtn.click(); }
+    });
+  });
+}
+
+// ---- Edit link click ------------------------------------------------------
+async function onEditClick(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (isEditing) return;
+
+  // If we already have a token from earlier this tab session, skip OTP.
+  let identity = null;
+  if (getToken()) {
+    const savedEmail = (() => {
+      try { return localStorage.getItem('hgEditorEmail') || ''; } catch { return ''; }
+    })();
+    identity = { email: savedEmail, name: (savedEmail.split('@')[0] || 'Editor') };
+  } else {
+    identity = await openOtpModal();
+    if (!identity) return; // user cancelled
+  }
 
   try {
-    const result = await tryAcquireLock(name);
+    const result = await tryAcquireLock(identity.name);
     if (!result.ok) {
+      if (result.unauthorized) {
+        // Token was rejected by the lock function — treat as fresh expiry.
+        handleAuthExpired('Could not start a new lock — token rejected.');
+        return;
+      }
       if (result.holder) {
         alert(`${result.holder} is currently editing. Please try again in a few minutes.`);
       } else {
@@ -353,19 +648,19 @@ async function onEditClick() {
       }
       return;
     }
-    enterEditMode(name);
+    enterEditMode(identity.name);
   } catch (err) {
     alert('Could not start editing: ' + (err && err.message ? err.message : err));
   }
 }
 
-// ---- Mount floating UI ----------------------------------------------------
+// ---- Mount footer "edit" link + save bar ----------------------------------
 function mountUI() {
+  // Save bar + lock banner (no floating Edit button anymore).
   const wrap = document.createElement('div');
   wrap.id = 'hg-editor-ui';
   wrap.innerHTML = `
     <div id="hg-lock-banner"></div>
-    <button id="hg-edit-btn" type="button" title="Edit this site">✏️  Edit</button>
     <div id="hg-save-bar">
       <span id="hg-save-bar-msg">Editing as <b id="hg-save-bar-name"></b> — click any text to change it.</span>
       <span>
@@ -375,17 +670,59 @@ function mountUI() {
     </div>
   `;
   document.body.appendChild(wrap);
-  document.getElementById('hg-edit-btn').addEventListener('click', onEditClick);
-  document.getElementById('hg-save-btn').addEventListener('click', saveChanges);
-  document.getElementById('hg-cancel-btn').addEventListener('click', cancelEdit);
+  const saveBtn = document.getElementById('hg-save-btn');
+  const cancelBtn = document.getElementById('hg-cancel-btn');
+  if (saveBtn) saveBtn.addEventListener('click', saveChanges);
+  if (cancelBtn) cancelBtn.addEventListener('click', cancelEdit);
+
+  mountFooterEditLink();
+}
+
+// Inject a discreet "edit" text link into the footer-bottom of the current
+// page. Falls back to appending into <footer> if the expected structure
+// isn't found (e.g. on a page that was edited to drop .footer-bottom).
+function mountFooterEditLink() {
+  // Don't double-mount across hot-reloads.
+  if (document.querySelector('.hg-edit-footer-link')) return;
+
+  const link = document.createElement('a');
+  link.href = '#';
+  link.className = 'hg-edit-footer-link';
+  link.textContent = 'edit';
+  link.setAttribute('rel', 'nofollow');
+  link.setAttribute('title', 'Sign in to edit this site');
+  link.addEventListener('click', onEditClick);
+
+  // Preferred home: the right-hand div inside .footer-bottom, next to
+  // "Privacy Practices · No Surprises Act". Separator matches existing
+  // markup style (two non-breaking spaces around a middle dot).
+  const footerBottom = document.querySelector('footer .footer-bottom');
+  if (footerBottom) {
+    const right = footerBottom.querySelector('div:last-child');
+    if (right) {
+      const sep = document.createTextNode('  ·  ');
+      right.appendChild(sep);
+      right.appendChild(link);
+      return;
+    }
+    // Fallback: tack onto the footer-bottom itself.
+    footerBottom.appendChild(link);
+    return;
+  }
+
+  // Hard fallback: any <footer>.
+  const footer = document.querySelector('footer');
+  if (footer) footer.appendChild(link);
 }
 
 // ---- Release lock if the editor navigates away ----------------------------
 window.addEventListener('beforeunload', () => {
   if (isEditing) {
-    // Fire-and-forget; sendBeacon so it survives unload
+    // Fire-and-forget; sendBeacon so it survives unload.
+    // We can't set custom headers on sendBeacon, so we pass the token in
+    // the body and let lock.mjs ignore it (the lock will time out anyway).
     try {
-      const body = JSON.stringify({ action: 'release', sessionId });
+      const body = JSON.stringify({ action: 'release', sessionId, token: getToken() });
       navigator.sendBeacon?.(
         LOCK_URL,
         new Blob([body], { type: 'application/json' })

@@ -2,14 +2,14 @@
 // POST /.netlify/functions/lock              → { action, sessionId, userName }
 //      action = "acquire" | "refresh" | "release"
 //
-// GETs are public (the live "someone is editing" banner polls this on
-// every page). POSTs require a valid `x-hg-token` header issued by
-// /.netlify/functions/otp.
+// GETs are public (every page polls this for the "someone is editing"
+// banner). POSTs require an `x-hg-token` header containing a valid token
+// issued by /.netlify/functions/otp; otherwise we 401.
 
 import { getStore } from '@netlify/blobs';
 
 const LOCK_KEY = 'editor';
-const LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const LOCK_TIMEOUT_MS = 10 * 60 * 1000;  // 10 minutes
 const TOKEN_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours; must match otp.mjs
 
 export default async (req) => {
@@ -21,8 +21,7 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
-    const authed = await checkToken(req);
-    if (!authed.ok) return json({ error: 'unauthorized' }, 401);
+    if (!(await checkToken(req))) return json({ error: 'unauthorized' }, 401);
 
     let body;
     try { body = await req.json(); } catch { return json({ error: 'invalid json' }, 400); }
@@ -64,12 +63,12 @@ export default async (req) => {
 
 async function checkToken(req) {
   const token = req.headers.get('x-hg-token');
-  if (!token || !/^[a-f0-9]{32}$/.test(token)) return { ok: false };
+  if (!token || !/^[a-f0-9]{32}$/.test(token)) return false;
   const otpStore = getStore('site-otp');
   const rec = await otpStore.get(`token:${token}`, { type: 'json', consistency: 'strong' });
-  if (!rec || !rec.ts) return { ok: false };
-  if (Date.now() - rec.ts > TOKEN_TTL_MS) return { ok: false };
-  return { ok: true };
+  if (!rec || !rec.ts) return false;
+  if (Date.now() - rec.ts > TOKEN_TTL_MS) return false;
+  return true;
 }
 
 function publicLock(lock) {

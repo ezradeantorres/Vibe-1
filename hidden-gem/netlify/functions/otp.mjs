@@ -1,27 +1,33 @@
 // POST /.netlify/functions/otp
 //   { action: "request", email }
-//     → if email in whitelist, generate 6-digit code,
-//       store in 'site-otp' blob keyed by email with timestamp,
-//       email it via Resend.
-//   { action: "verify", email, code }
-//     → if code matches and is < 10 min old, mint a 32-hex token,
-//       store in 'site-otp' blob keyed by `token:${token}` with timestamp,
-//       return { ok: true, token }.
+//     → if email is in the hard-coded whitelist, generate a 6-digit code,
+//       store it in the `site-otp` Netlify Blob keyed by `email:{email}`
+//       with a timestamp, and send the code via Resend.
+//     → if the email is NOT in the whitelist, still return { ok: true } so
+//       we don't reveal which addresses are allowed.
 //
-// The blob stores act as the TTL store: each entry carries a `ts` and we
-// reject anything older than the configured window on read. Stale entries
-// are best-effort overwritten on the next write; we don't run a sweeper.
+//   { action: "verify", email, code }
+//     → if the stored code matches and is < 10 minutes old, mint a
+//       32-hex-char token, store it in the `site-otp` blob keyed by
+//       `token:{token}` with a timestamp (the writers re-check the
+//       timestamp on each request as a 4-hour TTL), and return
+//       { ok: true, token }. Returns { ok: false } on any failure.
+//
+// The blob acts as the TTL store: each entry carries a `ts` and the
+// reader rejects anything older than the configured window. We do not
+// run a sweeper — stale rows are harmless and eventually overwritten.
 
 import { getStore } from '@netlify/blobs';
 import { randomInt, randomBytes } from 'node:crypto';
 
 // Hard-coded whitelist. Add or remove entries here and redeploy.
+// Lowercase only — incoming emails are normalized before lookup.
 const WHITELIST = new Set([
   'etorres@care.life',
   'elena@hiddengemhealingutah.com'
 ]);
 
-const CODE_TTL_MS = 10 * 60 * 1000;       // 10 minutes
+const CODE_TTL_MS = 10 * 60 * 1000;             // 10 minutes
 export const TOKEN_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 const PRIMARY_FROM = 'Hidden Gem <noreply@hiddengemhealingutah.com>';
@@ -63,6 +69,7 @@ export default async (req) => {
     const email = normalizeEmail(body.email);
     const code = String(body.code || '').trim();
     if (!email || !code) return json({ error: 'missing email or code' }, 400);
+    // Same fake-ok rule: don't leak whitelist membership via a 401 here.
     if (!WHITELIST.has(email)) return json({ ok: false }, 401);
 
     const stored = await store.get(`email:${email}`, {
@@ -73,7 +80,7 @@ export default async (req) => {
     if (Date.now() - stored.ts > CODE_TTL_MS) return json({ ok: false, expired: true }, 401);
     if (!constantTimeEqual(String(stored.code), code)) return json({ ok: false }, 401);
 
-    // Single-use: clear the code so it can't be re-used.
+    // Single-use: clear the code so it cannot be re-used.
     await store.delete(`email:${email}`);
 
     const token = randomBytes(16).toString('hex'); // 32 hex chars
@@ -99,10 +106,15 @@ function constantTimeEqual(a, b) {
 async function sendOtpEmail({ apiKey, to, code }) {
   const subject = 'Your Hidden Gem editor sign-in code';
   const text = `Your sign-in code is ${code}\n\nIt expires in 10 minutes.\n\nIf you did not request this, you can ignore this email.`;
-  const html = `<p>Your sign-in code is:</p><p style="font-size:28px;letter-spacing:6px;font-weight:600;font-family:monospace">${code}</p><p>It expires in 10 minutes.</p><p style="color:#666;font-size:12px">If you did not request this, you can ignore this email.</p>`;
+  const html =
+    `<p>Your sign-in code is:</p>` +
+    `<p style="font-size:28px;letter-spacing:6px;font-weight:600;font-family:monospace">${code}</p>` +
+    `<p>It expires in 10 minutes.</p>` +
+    `<p style="color:#666;font-size:12px">If you did not request this, you can ignore this email.</p>`;
 
   // Try the verified domain first, fall back to onboarding@resend.dev if
-  // Resend rejects the from-address (typically a 403 "domain not verified").
+  // Resend rejects the from-address (typically a 403 "domain not verified"
+  // before the operator has finished DNS setup on hiddengemhealingutah.com).
   const primary = await postResend({ apiKey, from: PRIMARY_FROM, to, subject, text, html });
   if (primary.ok) return { ok: true };
   if (primary.status === 403 || primary.status === 422 || primary.status === 400) {

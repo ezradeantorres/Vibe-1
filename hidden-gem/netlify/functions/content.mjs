@@ -1,8 +1,9 @@
 // GET  /.netlify/functions/content?page=home   → { "home:0": "...", ... }
 // POST /.netlify/functions/content              → { page, updates } → merges into blob
 //
-// GETs are public (visitors load overrides on every page view). POSTs
-// require a valid `x-hg-token` header issued by /.netlify/functions/otp.
+// GETs are public (every visitor loads overrides on page view). POSTs
+// require an `x-hg-token` header containing a valid token issued by
+// /.netlify/functions/otp; otherwise we 401.
 
 import { getStore } from '@netlify/blobs';
 
@@ -20,8 +21,7 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
-    const authed = await checkToken(req);
-    if (!authed.ok) return json({ error: 'unauthorized' }, 401);
+    if (!(await checkToken(req))) return json({ error: 'unauthorized' }, 401);
 
     let body;
     try { body = await req.json(); } catch { return json({ error: 'invalid json' }, 400); }
@@ -40,12 +40,12 @@ export default async (req) => {
 
 async function checkToken(req) {
   const token = req.headers.get('x-hg-token');
-  if (!token || !/^[a-f0-9]{32}$/.test(token)) return { ok: false };
+  if (!token || !/^[a-f0-9]{32}$/.test(token)) return false;
   const otpStore = getStore('site-otp');
   const rec = await otpStore.get(`token:${token}`, { type: 'json', consistency: 'strong' });
-  if (!rec || !rec.ts) return { ok: false };
-  if (Date.now() - rec.ts > TOKEN_TTL_MS) return { ok: false };
-  return { ok: true };
+  if (!rec || !rec.ts) return false;
+  if (Date.now() - rec.ts > TOKEN_TTL_MS) return false;
+  return true;
 }
 
 function json(obj, status = 200) {
