@@ -2,10 +2,10 @@
 //  HIDDEN GEM HEALING — IN-PAGE EDITOR (Netlify Blobs backend)
 // ============================================================
 //  Loads saved text overrides from a Netlify Function on every
-//  page view (public read), and gates editing behind an email OTP
-//  served by /.netlify/functions/otp. A successful verify returns
-//  a 32-hex token which the editor stashes in sessionStorage and
-//  attaches as `x-hg-token` on every write call.
+//  page view (public read), and gates editing behind a shared
+//  password POSTed to /.netlify/functions/otp. A successful sign-in
+//  returns a 32-hex token which the editor stashes in sessionStorage
+//  and attaches as `x-hg-token` on every write call.
 // ============================================================
 
 const CONTENT_URL = '/.netlify/functions/content';
@@ -413,14 +413,13 @@ function cancelEdit() {
   exitEditMode();
 }
 
-// ---- OTP modal flow -------------------------------------------------------
-// One small inline modal handles both steps:
-//   1. ask for email, POST {action:'request', email}
-//   2. ask for the 6-digit code, POST {action:'verify', email, code}
-// On success we stash the token in sessionStorage and continue into
-// tryAcquireLock + enterEditMode.
+// ---- Password modal flow --------------------------------------------------
+// One small inline modal asks for the shared editor password and POSTs
+// it to /.netlify/functions/otp. The function returns { ok: true, token }
+// on a match. The token is stashed in sessionStorage and sent on every
+// write via the x-hg-token header.
 
-function buildOtpModal() {
+function buildAuthModal() {
   // Reuse if already mounted (e.g. token expired and we're re-opening).
   let modal = document.getElementById('hg-otp-modal');
   if (modal) return modal;
@@ -435,42 +434,22 @@ function buildOtpModal() {
     <div class="hg-otp-card">
       <button type="button" class="hg-otp-close" data-hg-close="1" aria-label="Close">×</button>
       <h3 id="hg-otp-title">Editor sign-in</h3>
-      <p class="hg-otp-msg" id="hg-otp-msg">Enter your email to receive a sign-in code.</p>
+      <p class="hg-otp-msg" id="hg-otp-msg">Enter the editor password to continue.</p>
 
-      <div class="hg-otp-step" data-step="email">
-        <label for="hg-otp-email">Email</label>
-        <input type="email" id="hg-otp-email" autocomplete="email" placeholder="you@example.com" />
+      <div class="hg-otp-step" data-step="password">
+        <label for="hg-otp-password">Password</label>
+        <input type="password" id="hg-otp-password" autocomplete="current-password" />
         <div class="hg-otp-actions">
           <button type="button" id="hg-otp-cancel">Cancel</button>
-          <button type="button" id="hg-otp-send">Send code</button>
+          <button type="button" id="hg-otp-signin">Sign in</button>
         </div>
       </div>
 
-      <div class="hg-otp-step" data-step="code" hidden>
-        <label for="hg-otp-code">6-digit code</label>
-        <input type="text" id="hg-otp-code" inputmode="numeric" autocomplete="one-time-code"
-               pattern="[0-9]{6}" maxlength="6" placeholder="123456" />
-        <div class="hg-otp-actions">
-          <button type="button" id="hg-otp-back">Back</button>
-          <button type="button" id="hg-otp-verify">Verify &amp; edit</button>
-        </div>
-      </div>
-
-      <p class="hg-otp-foot">Editing is restricted to authorized accounts.</p>
+      <p class="hg-otp-foot">Editing is restricted to authorized users.</p>
     </div>
   `;
   document.body.appendChild(modal);
   return modal;
-}
-
-function showStep(modal, step) {
-  modal.querySelectorAll('.hg-otp-step').forEach(s => {
-    s.hidden = s.dataset.step !== step;
-  });
-  const focus = step === 'email'
-    ? modal.querySelector('#hg-otp-email')
-    : modal.querySelector('#hg-otp-code');
-  if (focus) setTimeout(() => focus.focus(), 0);
 }
 
 function setOtpMsg(modal, text, kind) {
@@ -480,36 +459,27 @@ function setOtpMsg(modal, text, kind) {
   m.dataset.kind = kind || '';
 }
 
-function closeOtpModal() {
+function closeAuthModal() {
   const modal = document.getElementById('hg-otp-modal');
   if (modal) modal.remove();
 }
 
-// Returns { email, name } on success, null if the user closed the modal.
-function openOtpModal() {
+// Returns { name } on success, null if the user closed the modal.
+function openAuthModal() {
   return new Promise(resolve => {
-    const modal = buildOtpModal();
+    const modal = buildAuthModal();
     modal.classList.add('open');
-    showStep(modal, 'email');
 
-    const emailInput = modal.querySelector('#hg-otp-email');
-    const codeInput = modal.querySelector('#hg-otp-code');
-    const sendBtn = modal.querySelector('#hg-otp-send');
-    const verifyBtn = modal.querySelector('#hg-otp-verify');
+    const pwInput = modal.querySelector('#hg-otp-password');
+    const signinBtn = modal.querySelector('#hg-otp-signin');
     const cancelBtn = modal.querySelector('#hg-otp-cancel');
-    const backBtn = modal.querySelector('#hg-otp-back');
 
-    const savedEmail = (() => {
-      try { return localStorage.getItem('hgEditorEmail') || ''; } catch { return ''; }
-    })();
-    if (savedEmail) emailInput.value = savedEmail;
-
-    let currentEmail = '';
+    setTimeout(() => pwInput && pwInput.focus(), 0);
 
     const close = (result) => {
       modal.removeEventListener('click', onBackdrop);
       document.removeEventListener('keydown', onEsc);
-      closeOtpModal();
+      closeAuthModal();
       resolve(result);
     };
     const onBackdrop = (e) => {
@@ -521,97 +491,40 @@ function openOtpModal() {
 
     cancelBtn.addEventListener('click', () => close(null));
 
-    sendBtn.addEventListener('click', async () => {
-      const email = (emailInput.value || '').trim().toLowerCase();
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setOtpMsg(modal, 'Please enter a valid email.', 'err');
+    signinBtn.addEventListener('click', async () => {
+      const password = pwInput.value || '';
+      if (!password) {
+        setOtpMsg(modal, 'Please enter the password.', 'err');
         return;
       }
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'Sending…';
-      setOtpMsg(modal, 'Sending code…', '');
+      signinBtn.disabled = true;
+      signinBtn.textContent = 'Signing in…';
       try {
         const res = await fetch(OTP_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ action: 'request', email })
-        });
-        if (!res.ok) {
-          const txt = await res.text().catch(() => '');
-          throw new Error(`HTTP ${res.status} ${txt}`);
-        }
-        currentEmail = email;
-        try { localStorage.setItem('hgEditorEmail', email); } catch {}
-        setOtpMsg(modal,
-          'If your address is authorized, a 6-digit code has been emailed to you. It expires in 10 minutes.',
-          'ok'
-        );
-        showStep(modal, 'code');
-      } catch (err) {
-        setOtpMsg(modal,
-          'Could not send code: ' + (err && err.message ? err.message : err),
-          'err'
-        );
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Send code';
-      }
-    });
-
-    backBtn.addEventListener('click', () => {
-      setOtpMsg(modal, 'Enter your email to receive a sign-in code.', '');
-      showStep(modal, 'email');
-    });
-
-    verifyBtn.addEventListener('click', async () => {
-      const code = (codeInput.value || '').trim();
-      if (!/^\d{6}$/.test(code)) {
-        setOtpMsg(modal, 'Enter the 6-digit code from your email.', 'err');
-        return;
-      }
-      verifyBtn.disabled = true;
-      verifyBtn.textContent = 'Verifying…';
-      try {
-        const res = await fetch(OTP_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ action: 'verify', email: currentEmail, code })
+          body: JSON.stringify({ password })
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data && data.ok && data.token) {
           setToken(data.token);
-          // Derive a display name from the email so the lock banner has
-          // something nicer than the full address to show others.
-          const name = currentEmail.split('@')[0] || 'Editor';
-          close({ email: currentEmail, name });
-        } else if (data && data.expired) {
-          setOtpMsg(modal,
-            'That code has expired. Click "Back" and request a new one.',
-            'err'
-          );
+          close({ name: 'Editor' });
         } else {
-          setOtpMsg(modal,
-            'Incorrect or expired code. Double-check the email and try again.',
-            'err'
-          );
+          setOtpMsg(modal, 'Incorrect password.', 'err');
         }
       } catch (err) {
         setOtpMsg(modal,
-          'Verification failed: ' + (err && err.message ? err.message : err),
+          'Sign-in failed: ' + (err && err.message ? err.message : err),
           'err'
         );
       } finally {
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = 'Verify & edit';
+        signinBtn.disabled = false;
+        signinBtn.textContent = 'Sign in';
       }
     });
 
-    // Enter-key shortcuts
-    emailInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); }
-    });
-    codeInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); verifyBtn.click(); }
+    pwInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); signinBtn.click(); }
     });
   });
 }
@@ -621,15 +534,12 @@ async function onEditClick(e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
   if (isEditing) return;
 
-  // If we already have a token from earlier this tab session, skip OTP.
+  // If we already have a token from earlier this tab session, skip auth.
   let identity = null;
   if (getToken()) {
-    const savedEmail = (() => {
-      try { return localStorage.getItem('hgEditorEmail') || ''; } catch { return ''; }
-    })();
-    identity = { email: savedEmail, name: (savedEmail.split('@')[0] || 'Editor') };
+    identity = { name: 'Editor' };
   } else {
-    identity = await openOtpModal();
+    identity = await openAuthModal();
     if (!identity) return; // user cancelled
   }
 

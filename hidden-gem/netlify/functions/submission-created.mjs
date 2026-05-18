@@ -15,7 +15,10 @@
 // double-send. Failures are logged; check Netlify Function logs if a
 // submission didn't generate an email.
 
-const PRIMARY_FROM = 'Hidden Gem <noreply@hiddengemhealingutah.com>';
+// Default FROM uses care.life (verified in Resend). Override per-deploy
+// with the APPOINTMENT_FROM env var, e.g. once hiddengemhealingutah.com
+// gets verified you can switch to 'Hidden Gem <noreply@hiddengemhealingutah.com>'.
+const PRIMARY_FROM = process.env.APPOINTMENT_FROM || 'Hidden Gem Bookings <noreply@care.life>';
 const FALLBACK_FROM = 'Hidden Gem <onboarding@resend.dev>';
 const DEFAULT_RECIPIENT = 'etorres@care.life';
 const RESEND_TIMEOUT_MS = 4000; // worst-case 8s total with one fallback retry
