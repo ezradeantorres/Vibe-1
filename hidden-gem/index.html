@@ -57,16 +57,16 @@
   HTML5 `hidden` attribute. Field names mirror about.html's real form;
   if you add/rename a field there, update this too.
 -->
-<form hidden name="appointment" netlify netlify-honeypot="bot-field">
-<input type="text" name="subject"/>
-<input type="text" name="first_name"/>
-<input type="text" name="last_name"/>
-<input type="tel" name="phone"/>
-<input type="email" name="email"/>
+<form hidden="" name="appointment" netlify="" netlify-honeypot="bot-field">
+<input name="subject" type="text"/>
+<input name="first_name" type="text"/>
+<input name="last_name" type="text"/>
+<input name="phone" type="tel"/>
+<input name="email" type="email"/>
 <select name="provider"><option></option></select>
-<input type="radio" name="preferred_contact" value="Phone"/>
-<input type="radio" name="preferred_contact" value="Email"/>
-<input type="radio" name="preferred_contact" value="Either"/>
+<input name="preferred_contact" type="radio" value="Phone"/>
+<input name="preferred_contact" type="radio" value="Email"/>
+<input name="preferred_contact" type="radio" value="Either"/>
 <select name="preferred_time"><option></option></select>
 <textarea name="message"></textarea>
 </form>
@@ -77,7 +77,7 @@
 <img alt="Hidden Gem Healing" src="images/logo-nav.png" style="height:44px"/>
 </a>
 <div class="nav-links">
-<a data-nav="home" href="index.html">Home</a>
+<a data-nav="home" href="index.html">HoMe</a>
 <div class="nav-dropdown">
 <a data-nav="sara">Mental Health</a>
 <div class="dropdown-menu">
@@ -86,7 +86,7 @@
 </div>
 </div>
 <a data-nav="abbey" href="abbey.html">Primary Care</a>
-<a data-nav="sam" href="sam-pediatric.html">Pediatrics</a>
+<a data-nav="sam" href="sam-pediatric.html">Pediactrics</a>
 <a data-nav="kiera" href="kiera-aesthetics.html">Aesthetics</a>
 <a data-nav="about" href="about.html">About</a>
 <a class="nav-cta" href="about.html#contact">Book Appointment</a>
@@ -114,7 +114,7 @@
 <div>
 <div class="hero-badge">Now Accepting new Clients<br/></div>
 <h1>Where Mind, Body,<br/>&amp; <em>Medicine</em><br/>Come Together</h1>
-<p class="hero-sub">Mental health, adult primary care, pediatric primary care, and aesthetics.</p>
+<p class="hero-sub"><span style="background-color: rgb(250, 248, 244);">Integrative psychiatry, whole-person primary care, equine-assisted psychotherapy, pediatric primary and aesthetics. Committed, personalized, holistic care in Holladay &amp; Sandy, Utah.</span></p>
 <div class="hero-actions">
 <a class="btn-primary" href="about.html#contact">Book an Appointment →</a>
 <a class="btn-secondary" href="#paths">Explore Services</a>
@@ -228,10 +228,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </a>
 <!-- TODO: replace placeholder photo with real Sam Hubert portrait when available -->
 <a class="split-card sc-pediatric reveal d3" href="sam-pediatric.html">
-<div class="split-photo"><img alt="Pediatric primary care &amp; functional medicine" src="images/edits/abbey_img_1.jpg"/></div>
+<div class="split-photo"><img alt="Pediatric primary care &amp; functional medicine" src="images/edits/home_img_4.png"/></div>
 <div class="split-body">
 <div class="split-tag">Pediatric primary care &amp; functional medicine</div>
-<h3>Root-cause care for growing bodies</h3>
+<h3>Committed, personalized, integrative care.</h3>
 <div class="provider">Samantha Hubert, CPNP-PC</div>
 <p>Samantha is a pediatric primary care NP with an extensive background in the pediatric ICU. She believes in supportive care from birth to adulthood. Join the waitlist now.</p>
 <div style="margin-bottom:16px">
@@ -244,10 +244,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </a>
 <!-- TODO: replace placeholder photo with real Kiera Spencer portrait when available -->
 <a class="split-card sc-aesthetic reveal d4" href="kiera-aesthetics.html">
-<div class="split-photo"><img alt="Aesthetics &amp; regenerative medicine" src="images/edits/sara-psych_img_1.jpg"/></div>
+<div class="split-photo"><img alt="Aesthetics &amp; regenerative medicine" src="images/edits/home_img_5.png"/></div>
 <div class="split-body">
 <div class="split-tag">Aesthetics &amp; regenerative medicine</div>
-<h3>Inner vitality, outer radiance.</h3>
+<h3>Request an Appointment</h3>
 <div class="provider">Kiera Spencer, FNP-C</div>
 <p>Board-certified Family Nurse Practitioner providing comprehensive, patient-centered care that bridges medicine and aesthetics. Her approach blends clinical precision with a thoughtful, individualized touch.</p>
 <div style="margin-bottom:16px">

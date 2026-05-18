@@ -254,7 +254,7 @@
 <form action="/about?submitted=true#contact" data-netlify="true" method="POST" name="appointment" netlify-honeypot="bot-field">
 <input name="form-name" type="hidden" value="appointment"/>
 <p style="display:none">
-<label>Don't fill this out if you're human: <input name="bot-field" tabindex="-1" autocomplete="off"/></label>
+<label>Don't fill this out if you're human: <input autocomplete="off" name="bot-field" tabindex="-1"/></label>
 </p>
 <input name="subject" type="hidden" value="New Appointment Request - Hidden Gem Healing"/>
 <div class="fr">
@@ -285,7 +285,7 @@
 <div class="fg">
 <label>Preferred time of day</label>
 <select name="preferred_time">
-<option value="No preference" selected="">No preference</option>
+<option selected="" value="No preference">No preference</option>
 <option value="Morning">Morning</option>
 <option value="Midday">Midday</option>
 <option value="Afternoon">Afternoon</option>
