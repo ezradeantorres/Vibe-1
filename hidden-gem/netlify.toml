@@ -6,8 +6,20 @@ functions = "netlify/functions"
   [functions."*"]
   node_bundler = "esbuild"
 
+# Pass /.netlify/* through untouched so the Functions routes never get
+# accidentally rewritten by anything we add below.
 [[redirects]]
-from = "/*"
-to = "/index.html"
-status = 404
+from = "/.netlify/*"
+to = "/.netlify/:splat"
+status = 200
+force = true
+
+# Pretty-URL rewrite: /about -> /about.html etc. force = false keeps real
+# files (css, images, the .html files themselves) winning. Replaces the
+# previous soft-404 catch-all, which broke /thanks.html and made form
+# submissions land on a 404 page.
+[[redirects]]
+from = "/:slug"
+to = "/:slug.html"
+status = 200
 force = false
