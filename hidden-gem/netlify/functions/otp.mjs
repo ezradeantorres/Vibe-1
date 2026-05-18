@@ -32,6 +32,7 @@ export const TOKEN_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 const PRIMARY_FROM = 'Hidden Gem <noreply@hiddengemhealingutah.com>';
 const FALLBACK_FROM = 'Hidden Gem <onboarding@resend.dev>';
+const RESEND_TIMEOUT_MS = 4000; // worst-case 8s with the one fallback retry
 
 export default async (req) => {
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
@@ -117,7 +118,7 @@ async function sendOtpEmail({ apiKey, to, code }) {
   // before the operator has finished DNS setup on hiddengemhealingutah.com).
   const primary = await postResend({ apiKey, from: PRIMARY_FROM, to, subject, text, html });
   if (primary.ok) return { ok: true };
-  if (primary.status === 403 || primary.status === 422 || primary.status === 400) {
+  if (primary.status === 0 || primary.status === 400 || primary.status === 403 || primary.status === 422) {
     const fb = await postResend({ apiKey, from: FALLBACK_FROM, to, subject, text, html });
     if (fb.ok) return { ok: true };
     return { ok: false, detail: fb.detail || primary.detail };
@@ -126,6 +127,8 @@ async function sendOtpEmail({ apiKey, to, code }) {
 }
 
 async function postResend({ apiKey, from, to, subject, text, html }) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -133,13 +136,17 @@ async function postResend({ apiKey, from, to, subject, text, html }) {
         'authorization': `Bearer ${apiKey}`,
         'content-type': 'application/json'
       },
-      body: JSON.stringify({ from, to, subject, text, html })
+      body: JSON.stringify({ from, to, subject, text, html }),
+      signal: controller.signal
     });
     if (res.ok) return { ok: true };
     const detail = await res.text().catch(() => '');
     return { ok: false, status: res.status, detail };
   } catch (err) {
-    return { ok: false, status: 0, detail: String(err && err.message || err) };
+    const isAbort = err && err.name === 'AbortError';
+    return { ok: false, status: 0, detail: isAbort ? 'timeout' : String(err && err.message || err) };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
