@@ -777,6 +777,14 @@ function mountFooterEditLink() {
   // Don't double-mount across hot-reloads.
   if (document.querySelector('.hg-edit-footer-link')) return;
 
+  // Anonymous visitors don't see this link unless they explicitly add
+  // `#edit` to the URL. Keeps the editor entry point out of the public
+  // footer while still letting admins find it (just remember the hash).
+  // If already authenticated this tab, show the link regardless so the
+  // edit workflow stays seamless.
+  const hashRequested = window.location.hash === '#edit';
+  if (!hashRequested && !getToken()) return;
+
   const link = document.createElement('a');
   link.href = '#';
   link.className = 'hg-edit-footer-link';
