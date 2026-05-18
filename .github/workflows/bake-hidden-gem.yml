@@ -18,7 +18,11 @@ permissions:
 
 concurrency:
   group: bake-hidden-gem
-  cancel-in-progress: false
+  # Coalesce rapid-fire dispatches to the latest one. With auto-trigger
+  # on every editor save (see netlify/functions/content.mjs:triggerBake)
+  # queued bakes would otherwise stack up; we always want the freshest
+  # blob snapshot, so the next dispatch supersedes anything pending.
+  cancel-in-progress: true
 
 jobs:
   bake:
