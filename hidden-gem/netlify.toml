@@ -6,18 +6,12 @@ functions = "netlify/functions"
   [functions."*"]
   node_bundler = "esbuild"
 
-# Pass /.netlify/* through untouched so the Functions routes never get
-# accidentally rewritten by anything we add below.
-[[redirects]]
-from = "/.netlify/*"
-to = "/.netlify/:splat"
-status = 200
-force = true
-
 # Pretty-URL rewrite: /about -> /about.html etc. force = false keeps real
-# files (css, images, the .html files themselves) winning. Replaces the
-# previous soft-404 catch-all, which broke /thanks.html and made form
-# submissions land on a 404 page.
+# files (css, images, the .html files themselves) winning. Functions at
+# /.netlify/* are handled by Netlify natively and don't need a redirect
+# rule -- the previous /.netlify/* pass-through was rejected at deploy
+# time ("Invalid /.netlify path in redirect source") and cluttered every
+# build log.
 [[redirects]]
 from = "/:slug"
 to = "/:slug.html"
