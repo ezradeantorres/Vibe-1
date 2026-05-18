@@ -1,9 +1,10 @@
-// GET  /.netlify/functions/content?page=home   → { "home:0": "...", ... }
-// POST /.netlify/functions/content              → { page, updates } → merges into blob
+// GET    /.netlify/functions/content?page=home   → { "home:0": "...", ... }
+// POST   /.netlify/functions/content              → { page, updates } → merges into blob
+// DELETE /.netlify/functions/content?page=home    → wipes ALL overrides for that page
 //
 // GETs are public (every visitor loads overrides on page view). POSTs
-// require an `x-hg-token` header containing a valid token issued by
-// /.netlify/functions/otp; otherwise we 401.
+// and DELETEs require an `x-hg-token` header containing a valid token
+// issued by /.netlify/functions/otp; otherwise we 401.
 
 import { getStore } from '@netlify/blobs';
 
@@ -33,6 +34,15 @@ export default async (req) => {
     const merged = { ...existing, ...updates };
     await store.setJSON(page, merged);
     return json({ ok: true, fields: Object.keys(updates).length });
+  }
+
+  if (req.method === 'DELETE') {
+    if (!(await checkToken(req))) return json({ error: 'unauthorized' }, 401);
+    const url = new URL(req.url);
+    const page = url.searchParams.get('page');
+    if (!page) return json({ error: 'missing page param' }, 400);
+    await store.delete(page);
+    return json({ ok: true, page, cleared: true });
   }
 
   return json({ error: 'method not allowed' }, 405);

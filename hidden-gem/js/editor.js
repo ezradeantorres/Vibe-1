@@ -438,6 +438,39 @@ async function saveChanges() {
   }
 }
 
+// Wipe ALL blob overrides for the current page so the original static
+// HTML wins. Use when stale/corrupt entries from earlier edits keep
+// leaking back into the rendered DOM and the only recovery is a clean
+// slate. Confirms before doing it; reloads the page on success so the
+// user sees the result immediately.
+async function resetPageOverrides() {
+  const msg = 'Wipe ALL in-editor changes for "' + pageKey + '"?\n\n'
+    + 'This deletes every text and image override stored for this page. '
+    + 'The original HTML will show on reload. This cannot be undone.';
+  if (!confirm(msg)) return;
+  const resetBtn = document.getElementById('hg-reset-btn');
+  if (resetBtn) { resetBtn.disabled = true; resetBtn.textContent = 'Resetting…'; }
+  try {
+    const res = await fetch(`${CONTENT_URL}?page=${encodeURIComponent(pageKey)}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    if (res.status === 401) {
+      handleAuthExpired('Reset failed — please sign in again.');
+      return;
+    }
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${txt}`);
+    }
+    await releaseLock().catch(() => {});
+    window.location.reload();
+  } catch (err) {
+    alert('Reset failed: ' + (err && err.message ? err.message : err));
+    if (resetBtn) { resetBtn.disabled = false; resetBtn.textContent = 'Reset page'; }
+  }
+}
+
 function cancelEdit() {
   document.querySelectorAll('.hg-editable').forEach(el => {
     const key = el.dataset.editKey;
@@ -608,6 +641,7 @@ function mountUI() {
     <div id="hg-save-bar">
       <span id="hg-save-bar-msg">Editing as <b id="hg-save-bar-name"></b> — click any text to change it.</span>
       <span>
+        <button id="hg-reset-btn" type="button" title="Wipe all in-editor changes for this page so the original HTML wins">Reset page</button>
         <button id="hg-cancel-btn" type="button">Cancel</button>
         <button id="hg-save-btn" type="button">Save</button>
       </span>
@@ -616,7 +650,9 @@ function mountUI() {
   document.body.appendChild(wrap);
   const saveBtn = document.getElementById('hg-save-btn');
   const cancelBtn = document.getElementById('hg-cancel-btn');
+  const resetBtn = document.getElementById('hg-reset-btn');
   if (saveBtn) saveBtn.addEventListener('click', saveChanges);
+  if (resetBtn) resetBtn.addEventListener('click', resetPageOverrides);
   if (cancelBtn) cancelBtn.addEventListener('click', cancelEdit);
 
   mountFooterEditLink();
