@@ -537,6 +537,36 @@ section { padding: 110px 0; }
 }
 
 /* ============================================
+   TESTIMONIALS ("What Clients Say")
+   ============================================ */
+.testimonials { background: var(--warm); padding: 100px 0; }
+.testimonials-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 28px; margin-top: 48px;
+}
+.testimonial-card {
+  background: var(--cream); border-radius: 20px; padding: 28px;
+  border: 1px solid rgba(61,107,90,0.08); border-left: 4px solid var(--gold);
+}
+.testimonial-card blockquote {
+  font-family: 'Cormorant Garamond', serif; font-size: 19px;
+  font-style: italic; color: var(--text); line-height: 1.55;
+  margin: 0 0 16px;
+}
+.testimonial-card cite {
+  font-family: 'Outfit', sans-serif; font-size: 14px;
+  color: var(--sage); font-style: normal; display: block;
+}
+.testimonials-footnote {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 14px; color: var(--text-light);
+  text-align: center; margin-top: 28px;
+}
+@media (max-width: 720px) {
+  .testimonials-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================
    CTA BAR
    ============================================ */
 .cta-bar {

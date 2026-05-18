@@ -6,10 +6,14 @@
 //      Stores binary in the `site-images` blob store AND updates
 //      `site-content/{page}` with the public URL so the override
 //      persists across page loads.
+//
+// GETs are public (visitors load images). POSTs require a valid
+// `x-hg-token` header issued by /.netlify/functions/otp.
 
 import { getStore } from '@netlify/blobs';
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB per image
+const TOKEN_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours; must match otp.mjs
 
 export default async (req) => {
   const imageStore = getStore('site-images');
@@ -35,6 +39,9 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
+    const authed = await checkToken(req);
+    if (!authed.ok) return text('unauthorized', 401);
+
     let form;
     try {
       form = await req.formData();
@@ -77,6 +84,16 @@ export default async (req) => {
 
   return text('method not allowed', 405);
 };
+
+async function checkToken(req) {
+  const token = req.headers.get('x-hg-token');
+  if (!token || !/^[a-f0-9]{32}$/.test(token)) return { ok: false };
+  const otpStore = getStore('site-otp');
+  const rec = await otpStore.get(`token:${token}`, { type: 'json', consistency: 'strong' });
+  if (!rec || !rec.ts) return { ok: false };
+  if (Date.now() - rec.ts > TOKEN_TTL_MS) return { ok: false };
+  return { ok: true };
+}
 
 function text(msg, status = 200) {
   return new Response(msg, {
