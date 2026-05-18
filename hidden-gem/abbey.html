@@ -64,6 +64,8 @@
 </div>
 </div>
 <a data-nav="abbey" href="abbey.html">Abbey</a>
+<a data-nav="sam" href="sam-pediatric.html">Sam</a>
+<a data-nav="kiera" href="kiera-aesthetics.html">Kiera</a>
 <a data-nav="about" href="about.html">About</a>
 <a class="nav-cta" href="about.html#contact">Book Appointment</a>
 </div>
@@ -76,6 +78,8 @@
 <a class="mobile-sub" href="sara-psychiatric.html">Psychiatric Care &amp; Medication</a>
 <a class="mobile-sub" href="sara-equine.html">Equine-Assisted Therapy</a>
 <a href="abbey.html">Abbey</a>
+<a href="sam-pediatric.html">Sam</a>
+<a href="kiera-aesthetics.html">Kiera</a>
 <a href="about.html">About</a>
 <a href="about.html#contact">Book Appointment</a>
 </div>
@@ -180,6 +184,65 @@
 </div>
 </div>
 </section>
+<!-- Specialties (tabbed) -->
+<section id="specialties" style="background:var(--cream);padding:100px 0">
+<div class="container">
+<div class="reveal" style="text-align:center">
+<div class="section-label">Specialties</div>
+<h2 class="section-title">A Closer Look</h2>
+<p class="section-desc" style="margin:0 auto">Four areas where Abbey's integrative approach makes the biggest difference.</p>
+</div>
+<div class="tabs reveal" role="tablist" aria-label="Abbey's specialties">
+<button aria-controls="tab-hormone" aria-selected="true" class="tabs-tab is-active" id="tabbtn-hormone" role="tab" type="button">Hormone optimization</button>
+<button aria-controls="tab-weight" aria-selected="false" class="tabs-tab" id="tabbtn-weight" role="tab" type="button">Weight loss</button>
+<button aria-controls="tab-labs" aria-selected="false" class="tabs-tab" id="tabbtn-labs" role="tab" type="button">Advanced labwork</button>
+<button aria-controls="tab-migraine" aria-selected="false" class="tabs-tab" id="tabbtn-migraine" role="tab" type="button">Migraines (Botox)</button>
+</div>
+<div class="tabs-panels reveal">
+<div aria-labelledby="tabbtn-hormone" class="tabs-panel is-active" id="tab-hormone" role="tabpanel">
+<h3>Hormone optimization</h3>
+<p>Perimenopause, menopause, PCOS, testosterone and bio-identical hormone therapy for men and women. Comprehensive labs, personalized dosing, and the time to actually see the picture.</p>
+<a class="btn-secondary" href="about.html?provider=abbey#contact">Book with Abbey →</a>
+</div>
+<div aria-labelledby="tabbtn-weight" class="tabs-panel" id="tab-weight" role="tabpanel">
+<h3>Weight loss</h3>
+<p>Sustainable, root-cause weight loss. Metabolism, hormones, inflammation, gut health, and sleep — not just calories in vs. calories out. Plans that change as you do.</p>
+<a class="btn-secondary" href="about.html?provider=abbey#contact">Book with Abbey →</a>
+</div>
+<div aria-labelledby="tabbtn-labs" class="tabs-panel" id="tab-labs" role="tabpanel">
+<h3>Advanced labwork</h3>
+<p>Extensive private panels well beyond what most primary care orders. Abbey spends hours reviewing your results before building your plan — and explains every value.</p>
+<a class="btn-secondary" href="about.html?provider=abbey#contact">Book with Abbey →</a>
+</div>
+<div aria-labelledby="tabbtn-migraine" class="tabs-panel" id="tab-migraine" role="tabpanel">
+<h3>Migraines (Botox)</h3>
+<p>FDA-approved Botox protocol for chronic migraines, paired with root-cause investigation of triggers — hormones, sleep, gut, inflammation. Relief plus a plan.</p>
+<a class="btn-secondary" href="about.html?provider=abbey#contact">Book with Abbey →</a>
+</div>
+</div>
+</div>
+</section>
+<script>
+(function(){
+  var tabs = document.querySelectorAll('#specialties .tabs-tab');
+  var panels = document.querySelectorAll('#specialties .tabs-panel');
+  function select(idx) {
+    tabs.forEach(function(t, i){
+      var on = i === idx;
+      t.classList.toggle('is-active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    panels.forEach(function(p, i){ p.classList.toggle('is-active', i === idx); });
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ select(i); });
+    t.addEventListener('keydown', function(e){
+      if (e.key === 'ArrowRight') { e.preventDefault(); select((i+1) % tabs.length); tabs[(i+1) % tabs.length].focus(); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); select((i-1+tabs.length) % tabs.length); tabs[(i-1+tabs.length) % tabs.length].focus(); }
+    });
+  });
+})();
+</script>
 <!-- Comparison Table -->
 <section style="background:var(--deep);color:var(--white);padding:100px 0">
 <div class="container">
@@ -288,6 +351,8 @@
 <a href="sara-psychiatric.html">Psychiatric Care</a>
 <a href="sara-equine.html">Equine Therapy</a>
 <a href="abbey.html">Primary Care</a>
+<a href="sam-pediatric.html">Pediatric Primary Care</a>
+<a href="kiera-aesthetics.html">Aesthetics</a>
 </div>
 <div class="footer-col">
 <h4>Learn</h4>

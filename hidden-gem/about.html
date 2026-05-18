@@ -64,6 +64,8 @@
 </div>
 </div>
 <a data-nav="abbey" href="abbey.html">Abbey</a>
+<a data-nav="sam" href="sam-pediatric.html">Sam</a>
+<a data-nav="kiera" href="kiera-aesthetics.html">Kiera</a>
 <a data-nav="about" href="about.html">About</a>
 <a class="nav-cta" href="about.html#contact">Book Appointment</a>
 </div>
@@ -76,6 +78,8 @@
 <a class="mobile-sub" href="sara-psychiatric.html">Psychiatric Care &amp; Medication</a>
 <a class="mobile-sub" href="sara-equine.html">Equine-Assisted Therapy</a>
 <a href="abbey.html">Abbey</a>
+<a href="sam-pediatric.html">Sam</a>
+<a href="kiera-aesthetics.html">Kiera</a>
 <a href="about.html">About</a>
 <a href="about.html#contact">Book Appointment</a>
 </div>
@@ -246,7 +250,7 @@
 <p class="section-desc" style="margin:0 auto 36px">Select your provider, request a time, and Elena will call to confirm.</p>
 </div>
 <div class="book-form reveal" id="contact-form">
-<form action="/about.html?submitted=true#contact" data-netlify="true" method="POST" name="appointment" netlify-honeypot="bot-field">
+<form action="/thanks.html" data-netlify="true" method="POST" name="appointment" netlify-honeypot="bot-field">
 <input name="form-name" type="hidden" value="appointment"/>
 <input name="bot-field" style="display:none"/>
 <input name="subject" type="hidden" value="New Appointment Request - Hidden Gem Healing"/>
@@ -321,6 +325,8 @@
 <a href="sara-psychiatric.html">Psychiatric Care</a>
 <a href="sara-equine.html">Equine Therapy</a>
 <a href="abbey.html">Primary Care</a>
+<a href="sam-pediatric.html">Pediatric Primary Care</a>
+<a href="kiera-aesthetics.html">Aesthetics</a>
 </div>
 <div class="footer-col">
 <h4>Learn</h4>
@@ -350,20 +356,5 @@
 <!-- END SHARED: FOOTER -->
 <script src="js/main.js"></script>
 <script src="js/editor.js" type="module"></script>
-<script>
-(function(){
-  if (window.location.search.indexOf('submitted=true') === -1) return;
-  var form = document.getElementById('contact-form');
-  if (!form) return;
-  var banner = document.createElement('div');
-  banner.setAttribute('role', 'status');
-  banner.style.cssText = 'background:var(--sage);color:#fff;padding:18px 24px;border-radius:12px;margin-bottom:24px;font-size:15px';
-  banner.textContent = 'Thanks! Elena will reach out within 1 business day to confirm.';
-  form.parentNode.insertBefore(banner, form);
-  if (window.history && window.history.replaceState) {
-    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
-  }
-})();
-</script>
 </body>
 </html>
