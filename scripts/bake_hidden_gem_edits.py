@@ -90,6 +90,18 @@ def sanitize_override_html(html):
         else:
             del el["class"]
 
+    # Strip inline background-color from <span style="..."> (artifact of the
+    # browser's highlight tool being applied inside the editor; renders as
+    # visible cream stripes behind hero text). Drop the declaration; if
+    # nothing else is in the style attribute, drop the attribute entirely.
+    import re as _re
+    for el in soup.find_all("span", style=True):
+        cleaned = _re.sub(r"background-color\s*:[^;]*;?\s*", "", el["style"]).strip()
+        if cleaned:
+            el["style"] = cleaned
+        else:
+            del el["style"]
+
     for el in soup.select('div[aria-hidden="true"].pointer-events-none'):
         el.decompose()
 
@@ -228,6 +240,7 @@ def apply_overrides(soup, overrides):
             fragment = BeautifulSoup(sanitize_override_html(val), "html.parser")
             for child in list(fragment.contents):
                 target.append(child)
+            _unwrap_self_nested(target)
             ext_count += 1
             continue
 
@@ -242,12 +255,26 @@ def apply_overrides(soup, overrides):
 
         target = text_nodes[idx]
         target.clear()
-        fragment = BeautifulSoup(val, "html.parser")
+        fragment = BeautifulSoup(sanitize_override_html(val), "html.parser")
         for child in list(fragment.contents):
             target.append(child)
+        _unwrap_self_nested(target)
         text_count += 1
 
     return text_count, ext_count, img_count
+
+
+def _unwrap_self_nested(target):
+    """If target.append() produced `<p class="ps-body"><p>text</p></p>` or
+    similar same-tag nesting, unwrap the inner one. Same for li, div, span.
+    Handles the bake-bug residue where blob values stored a wrapping <p>
+    that, when appended into an already-<p> target, creates nested <p>s."""
+    nestable = {"p", "li", "div", "span"}
+    if target.name not in nestable:
+        return
+    children = [c for c in target.contents if not (isinstance(c, str) and not c.strip())]
+    if len(children) == 1 and getattr(children[0], "name", None) == target.name:
+        children[0].unwrap()
 
 
 def main():

@@ -139,6 +139,17 @@ function sanitizeOverrideHTML(html) {
   tmp.querySelectorAll('.hg-editable').forEach(el => el.classList.remove('hg-editable'));
   tmp.querySelectorAll('[class=""]').forEach(el => el.removeAttribute('class'));
 
+  // Strip inline background-color from <span style="..."> -- artifact of
+  // the browser's highlight tool being applied inside the editor; renders
+  // as visible cream stripes behind hero text.
+  tmp.querySelectorAll('span[style]').forEach(s => {
+    const cleaned = (s.getAttribute('style') || '')
+      .replace(/background-color\s*:[^;]*;?\s*/gi, '')
+      .trim();
+    if (cleaned) s.setAttribute('style', cleaned);
+    else s.removeAttribute('style');
+  });
+
   tmp.querySelectorAll('div[aria-hidden="true"].pointer-events-none').forEach(el => el.remove());
   tmp.querySelectorAll('p').forEach(p => {
     if (!p.textContent.trim() && p.children.length === 0) p.remove();
@@ -631,8 +642,25 @@ async function onEditClick(e) {
   }
 }
 
+// Strip any editor-chrome attributes that may have ended up in the static
+// HTML via a stale bake. Anonymous visitors should never see contenteditable
+// or hg-editable nodes; collectAllTextEditables() will re-issue clean
+// data-edit-keys positionally on its next pass.
+function neutralizeStaticEditorChrome() {
+  const ui = document.getElementById('hg-editor-ui');
+  document.querySelectorAll('[contenteditable]').forEach(el => {
+    if (!ui || !ui.contains(el)) el.removeAttribute('contenteditable');
+  });
+  document.querySelectorAll('.hg-editable').forEach(el => el.classList.remove('hg-editable'));
+  document.querySelectorAll('[data-edit-key]').forEach(el => el.removeAttribute('data-edit-key'));
+  ['data-start','data-end','data-is-only-node','data-is-last-node'].forEach(attr => {
+    document.querySelectorAll('[' + attr + ']').forEach(el => el.removeAttribute(attr));
+  });
+}
+
 // ---- Mount footer "edit" link + save bar ----------------------------------
 function mountUI() {
+  neutralizeStaticEditorChrome();
   // Save bar + lock banner (no floating Edit button anymore).
   const wrap = document.createElement('div');
   wrap.id = 'hg-editor-ui';
