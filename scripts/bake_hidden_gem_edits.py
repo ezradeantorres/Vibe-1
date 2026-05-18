@@ -38,6 +38,8 @@ PAGE_FILES = [
     "abbey.html",
     "sara-equine.html",
     "sara-psychiatric.html",
+    "sam-pediatric.html",
+    "kiera-aesthetics.html",
 ]
 
 # Mirror EDITABLE_SELECTOR in hidden-gem/js/editor.js. Keep in sync.
@@ -58,6 +60,52 @@ EXT_EDITABLE_SELECTORS = (
     "footer h4, footer p, footer a, "
     "nav a, .nav-links a"
 )
+
+
+def sanitize_override_html(html):
+    """Mirror sanitizeOverrideHTML() in hidden-gem/js/editor.js.
+
+    Strip editor chrome a previous editor version may have round-tripped
+    into stored blob values: contenteditable + .hg-editable + data-edit-key
+    + the data-start/data-end/data-is-only-node/data-is-last-node markers,
+    the <div aria-hidden="true" class="pointer-events-none ..."> cruft,
+    empty <p> tags, and nested <p><p>...</p></p> patterns. Keeps the
+    static HTML the source of truth even when the blob is dirty.
+    """
+    if not isinstance(html, str) or not html:
+        return html
+    soup = BeautifulSoup(html, "html.parser")
+
+    for el in soup.find_all(attrs={"contenteditable": True}):
+        del el["contenteditable"]
+    for el in soup.find_all(attrs={"data-edit-key": True}):
+        del el["data-edit-key"]
+    for attr in ("data-start", "data-end", "data-is-only-node", "data-is-last-node"):
+        for el in soup.find_all(attrs={attr: True}):
+            del el[attr]
+    for el in soup.select(".hg-editable"):
+        classes = [c for c in el.get("class", []) if c != "hg-editable"]
+        if classes:
+            el["class"] = classes
+        else:
+            del el["class"]
+
+    for el in soup.select('div[aria-hidden="true"].pointer-events-none'):
+        el.decompose()
+
+    for p in soup.find_all("p"):
+        if not p.get_text(strip=True) and not p.find(True):
+            p.decompose()
+
+    for inner in soup.select("p > p"):
+        outer = inner.parent
+        idx = list(outer.contents).index(inner)
+        for child in list(inner.contents):
+            outer.insert(idx, child)
+            idx += 1
+        inner.decompose()
+
+    return str(soup)
 
 
 def get_page_key(soup):
@@ -177,7 +225,7 @@ def apply_overrides(soup, overrides):
                 continue
             target = ext_nodes[idx]
             target.clear()
-            fragment = BeautifulSoup(val, "html.parser")
+            fragment = BeautifulSoup(sanitize_override_html(val), "html.parser")
             for child in list(fragment.contents):
                 target.append(child)
             ext_count += 1

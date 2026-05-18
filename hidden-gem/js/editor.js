@@ -120,6 +120,39 @@ function collectEditableImages() {
   return result;
 }
 
+// Strip editor chrome that a previous editor version round-tripped into
+// stored blob values: `contenteditable`, `class="hg-editable"`, the
+// data-edit-key + data-start/data-end/data-is-only-node/data-is-last-node
+// attributes, the `<div aria-hidden="true" class="pointer-events-none …">`
+// cruft, empty <p> tags, and nested <p><p>…</p></p> patterns. Without
+// this, overlays re-inject corruption into a clean DOM on every load.
+function sanitizeOverrideHTML(html) {
+  if (typeof html !== 'string' || !html) return html;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+
+  tmp.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+  tmp.querySelectorAll('[data-edit-key]').forEach(el => el.removeAttribute('data-edit-key'));
+  ['data-start','data-end','data-is-only-node','data-is-last-node'].forEach(attr => {
+    tmp.querySelectorAll('[' + attr + ']').forEach(el => el.removeAttribute(attr));
+  });
+  tmp.querySelectorAll('.hg-editable').forEach(el => el.classList.remove('hg-editable'));
+  tmp.querySelectorAll('[class=""]').forEach(el => el.removeAttribute('class'));
+
+  tmp.querySelectorAll('div[aria-hidden="true"].pointer-events-none').forEach(el => el.remove());
+  tmp.querySelectorAll('p').forEach(p => {
+    if (!p.textContent.trim() && p.children.length === 0) p.remove();
+  });
+
+  tmp.querySelectorAll('p > p').forEach(inner => {
+    const outer = inner.parentElement;
+    while (inner.firstChild) outer.insertBefore(inner.firstChild, inner);
+    inner.remove();
+  });
+
+  return tmp.innerHTML;
+}
+
 // ---- Load and apply overrides on every page load --------------------------
 async function loadOverrides() {
   const textEls = collectAllTextEditables();
@@ -130,7 +163,7 @@ async function loadOverrides() {
     const data = await res.json();
     for (const el of textEls) {
       const key = el.dataset.editKey;
-      if (typeof data[key] === 'string') el.innerHTML = data[key];
+      if (typeof data[key] === 'string') el.innerHTML = sanitizeOverrideHTML(data[key]);
     }
     for (const img of imgEls) {
       const key = img.dataset.editImgKey;
@@ -373,7 +406,7 @@ async function saveChanges() {
   const updates = {};
   editables.forEach(el => {
     const key = el.dataset.editKey;
-    const newVal = el.innerHTML;
+    const newVal = sanitizeOverrideHTML(el.innerHTML);
     if (newVal !== originalContent[key]) updates[key] = newVal;
   });
   const saveBtn = document.getElementById('hg-save-btn');
