@@ -28,17 +28,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Active nav state ---
   const page = document.body.dataset.page;
+  // Map body data-page values to the nav-links data-nav key whose
+  // underline should light up. All five service pages activate the
+  // single "Services" dropdown trigger.
+  const navKeyForPage = {
+    home: 'home',
+    about: 'about',
+    'sara-psych': 'services',
+    'sara-equine': 'services',
+    abbey: 'services',
+    sam: 'services',
+    keira: 'services'
+  };
   if (page) {
+    // Direct match (data-nav="<page>")
     document.querySelectorAll('[data-nav]').forEach(link => {
-      if (link.dataset.nav === page) {
-        link.classList.add('active');
-      }
-      // Activate Sara parent for both Sara sub-pages
-      if (link.dataset.nav === 'sara' && (page === 'sara-psych' || page === 'sara-equine')) {
-        link.classList.add('active');
-      }
+      if (link.dataset.nav === page) link.classList.add('active');
     });
+    // Mapped key (the Services trigger lights up for any service sub-page)
+    const mapped = navKeyForPage[page];
+    if (mapped) {
+      const link = document.querySelector('.nav-links [data-nav="' + mapped + '"]');
+      if (link) {
+        link.classList.add('active');
+        const wrap = link.closest('.nav-dropdown');
+        if (wrap) wrap.classList.add('active');
+      }
+    }
   }
+
+  // --- Dropdown ARIA state (hover + focus-within toggles aria-expanded) ---
+  document.querySelectorAll('.nav-dropdown').forEach(dd => {
+    const trigger = dd.querySelector('[aria-haspopup="true"]');
+    if (!trigger) return;
+    const setExpanded = (open) => trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    dd.addEventListener('mouseenter', () => setExpanded(true));
+    dd.addEventListener('mouseleave', () => setExpanded(false));
+    dd.addEventListener('focusin', () => setExpanded(true));
+    dd.addEventListener('focusout', (e) => {
+      if (!dd.contains(e.relatedTarget)) setExpanded(false);
+    });
+  });
 
   // --- FAQ accordion ---
   document.querySelectorAll('.faq-q').forEach(q => {
