@@ -175,6 +175,36 @@ function sanitizeOverrideHTML(html) {
     inner.remove();
   });
 
+  // Defense-in-depth allowlist. innerHTML does not execute <script> but
+  // does fire <img onerror=...>, <svg onload=...>, javascript: hrefs, etc.
+  // The trust boundary is EDITOR_PASSWORD (which defaults to 'chloe' if
+  // the env var is unset — see otp.mjs FALLBACK_PASSWORD). Any persisted
+  // content reaches every visitor through this function, so the safe set
+  // of tags + attributes lives here. Mirror in sanitize_override_html()
+  // in scripts/bake_hidden_gem_edits.py.
+  const ALLOWED_TAGS = new Set(['A','B','BR','BLOCKQUOTE','EM','I','LI','OL','P','SPAN','STRONG','U','UL']);
+  const DROP_TAGS = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','LINK','META','BASE','FORM','INPUT','BUTTON','SELECT','TEXTAREA','AUDIO','VIDEO','SVG','MATH']);
+  const ALLOWED_ATTRS = { A: new Set(['href']) };
+  const SAFE_URL_RE = /^(?:https?:|mailto:|tel:|[/?#])|^[^:]*$/i;
+  for (const el of Array.from(tmp.querySelectorAll('*'))) {
+    if (!el.parentNode) continue;
+    const tag = el.tagName;
+    if (DROP_TAGS.has(tag)) { el.remove(); continue; }
+    if (!ALLOWED_TAGS.has(tag)) {
+      const parent = el.parentNode;
+      while (el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+      continue;
+    }
+    const allowed = ALLOWED_ATTRS[tag] || new Set();
+    for (const name of Array.from(el.getAttributeNames())) {
+      if (!allowed.has(name.toLowerCase())) { el.removeAttribute(name); continue; }
+      if (name.toLowerCase() === 'href' && !SAFE_URL_RE.test((el.getAttribute(name) || '').trim())) {
+        el.removeAttribute(name);
+      }
+    }
+  }
+
   return tmp.innerHTML;
 }
 

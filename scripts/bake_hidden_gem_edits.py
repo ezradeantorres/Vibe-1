@@ -39,7 +39,7 @@ PAGE_FILES = [
     "sara-equine.html",
     "sara-psychiatric.html",
     "sam-pediatric.html",
-    "kiera-aesthetics.html",
+    "keira-aesthetics.html",
 ]
 
 # Mirror EDITABLE_SELECTOR in hidden-gem/js/editor.js. Keep in sync.
@@ -115,6 +115,36 @@ def sanitize_override_html(html):
             outer.insert(idx, child)
             idx += 1
         inner.decompose()
+
+    # Defense-in-depth allowlist. Mirrors editor.js sanitizeOverrideHTML().
+    # Tags not on ALLOWED_TAGS get unwrapped (content survives, markup
+    # discarded). Script-like containers in DROP_TAGS get decomposed
+    # entirely. Allowed attributes per tag live in ALLOWED_ATTRS; URL
+    # attributes are scheme-checked against SAFE_URL_RE. The trust
+    # boundary is EDITOR_PASSWORD (defaults to 'chloe' if unset, see
+    # hidden-gem/netlify/functions/otp.mjs FALLBACK_PASSWORD).
+    allowed_tags = {"a", "b", "br", "blockquote", "em", "i", "li", "ol", "p", "span", "strong", "u", "ul"}
+    drop_tags = {"script", "style", "iframe", "object", "embed", "link", "meta", "base", "form", "input", "button", "select", "textarea", "audio", "video", "svg", "math"}
+    allowed_attrs = {"a": {"href"}}
+    safe_url_re = _re.compile(r"^(?:https?:|mailto:|tel:|[/?#])|^[^:]*$", _re.I)
+    for el in list(soup.find_all(True)):
+        if el.parent is None:
+            continue
+        tag = (el.name or "").lower()
+        if tag in drop_tags:
+            el.decompose()
+            continue
+        if tag not in allowed_tags:
+            el.unwrap()
+            continue
+        allowed = allowed_attrs.get(tag, set())
+        for attr_name in list(el.attrs.keys()):
+            if attr_name.lower() not in allowed:
+                del el[attr_name]
+                continue
+            if attr_name.lower() == "href":
+                if not safe_url_re.match(str(el[attr_name]).strip()):
+                    del el[attr_name]
 
     return str(soup)
 

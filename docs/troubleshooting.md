@@ -16,7 +16,7 @@ For broader context see `docs/architecture.md`, `docs/runbook.md` (Netlify dashb
 | Form notification still going to wrong recipient after code change | [Email surfaces conflated](#form-notification-recipient-is-dashboard-only) | Med |
 | Edits save but never appear on the static site after bake | [EDITABLE_SELECTOR drift](#editor--bake-editable_selector-drift-silently-corrupts-content) | High |
 | `:ext:` namespace keys aren't being baked | [`:ext:` historically skipped](#ext-namespace-was-historically-skipped-by-the-bake) | Med |
-| Editor chrome / weird HTML on the live site | [Raw HTML write-through XSS surface](#editor-and-bake-treat-stored-content-as-raw-html) | High |
+| Legitimate `<div>` or other tags stripped from saved content | [Allowlist sanitizer scope](#editor-and-bake-treat-stored-content-as-raw-html) | Med |
 | "Site stuck on old deploy" | [Misdiagnosed as locked deploy](#locked-deploy-framing-is-a-common-misdiagnosis) | Med |
 | Netlify function or live URL unreachable from Claude session | [Sandbox egress firewall](#sandbox-level-egress-firewall-blocks-netlifyapp-from-inside-claude-code-on-the-web) | Med |
 | Editor password mystery | [`EDITOR_PASSWORD` default is `chloe`](#editor_password-env-var-defaults-to-chloe-if-unset) | Med |
@@ -168,17 +168,19 @@ Look for both `collect_ext_text_nodes` and `:ext:` routing inside `apply_overrid
 
 ## Editor and bake treat stored content as raw HTML
 
-**Symptom.** A malicious or buggy POST to `/.netlify/functions/content` writes HTML to a Netlify Blob. That HTML is then rendered into the live site verbatim and persisted into the static HTML on the next bake.
+**Symptom (was).** A malicious or buggy POST to `/.netlify/functions/content` could write arbitrary HTML to a Netlify Blob, which would then be injected verbatim into the live site (via `el.innerHTML`) and into the static HTML on the next bake. `innerHTML` does not execute `<script>` but does fire `<img onerror>`, `<svg onload>`, `javascript:` href clicks, etc.
 
-**Cause.** Editor and bake both treat stored content as raw HTML:
-- `hidden-gem/js/editor.js` does `el.innerHTML = sanitizeOverrideHTML(data[key])` (formerly raw, now sanitized — see commit `6eb890f`).
-- `scripts/bake_hidden_gem_edits.py` parses values with BeautifulSoup and appends children into the DOM (`apply_overrides`).
+**Symptom (now).** An editor who pastes content containing tags outside the allowlist (e.g. `<div>`, `<table>`, `<h1>` inside a paragraph) sees the tags silently unwrapped on save. Text content survives; markup is discarded.
 
-The trust boundary is whoever holds the `EDITOR_PASSWORD` (default `chloe`, see [`EDITOR_PASSWORD` defaults](#editor_password-env-var-defaults-to-chloe-if-unset)) and can therefore mint a token via `/.netlify/functions/otp`. Anyone with a token can POST persistent HTML.
+**Cause.** Editor and bake both treat stored content as HTML:
+- `hidden-gem/js/editor.js` does `el.innerHTML = sanitizeOverrideHTML(data[key])` on every page load.
+- `scripts/bake_hidden_gem_edits.py` parses values via `sanitize_override_html()` + BeautifulSoup and appends children into the DOM (`apply_overrides`).
 
-**Fix.** Don't widen the password / OTP trust boundary without also tightening the sanitizer. Current sanitization (added in commit `6eb890f` and `584f5a2`) strips `contenteditable`, `hg-editable`, `data-edit-key`, `data-start`/`data-end`, empty `<p>`s, the `pointer-events-none` cruft divs, and inline `background-color`. Both client and bake use the same sanitizer logic — keep them in sync.
+The trust boundary is whoever holds the `EDITOR_PASSWORD` (default `chloe`, see [`EDITOR_PASSWORD` defaults](#editor_password-env-var-defaults-to-chloe-if-unset)) and can therefore mint a token via `/.netlify/functions/otp`. Anyone with a token can POST persistent content.
 
-**Prevention.** Treat the password as the trust boundary. Rotate `EDITOR_PASSWORD` via the dashboard env var if it leaks. If the editor ever gains more permissive auth (e.g. open signup), add server-side sanitization in the content function, not just the client.
+**Fix.** Both sanitizers run an allowlist over every node before render. Allowed tags: `a, b, br, blockquote, em, i, li, ol, p, span, strong, u, ul`. Allowed attributes: `href` on `<a>` only, and only when the URL scheme is `http(s):`, `mailto:`, `tel:`, or relative (no `javascript:`, `data:`, `vbscript:`). Everything else gets unwrapped (text preserved) or — for `<script>`, `<style>`, `<iframe>`, `<svg>`, `<form>`, media tags, etc. — decomposed (content discarded). This is in addition to the editor-chrome stripping (`contenteditable`, `hg-editable`, `data-edit-key`, `data-start`/`data-end`, empty `<p>`s, the `pointer-events-none` cruft divs, inline `background-color`). The JS sanitizer is at `hidden-gem/js/editor.js:143` and the Python mirror is at `scripts/bake_hidden_gem_edits.py:64`; they MUST produce identical output for identical input.
+
+**Prevention.** Treat the password as the trust boundary. Rotate `EDITOR_PASSWORD` via the dashboard env var if it leaks. The current sanitizer is conservative and may strip legitimate HTML if a future editor feature wants to allow, say, `<div>` or `<img>` inside text content — in that case widen the allowlist in BOTH sanitizers together and add a test case for the new tag. Server-side sanitization in `content.mjs` is still not implemented; the storage layer accepts whatever the client POSTs and relies on the two-sided render sanitizer. Adding server-side write sanitization would be a defense-in-depth win.
 
 ---
 
